@@ -6,6 +6,7 @@ The script processes each task by unzipping corresponding files, executing comma
 ## Prerequisites
 
 - Python 3.x
+- 2501 CLI, [NPM repository here](https://www.npmjs.com/package/@2501-ai/2501-cli)
 
 ## Files and Directories
 
