@@ -1,6 +1,7 @@
 # 2501 - Honest Benchmark Evaluation
 
-This repository contains a script (`evaluate.py`) to evaluate tasks defined in a JSONL file. The script processes each task by unzipping corresponding files, executing commands, and running tests.
+This repository contains the evaluation harness for 2501 engines and mixture of models, using the script (`evaluate.py`) to evaluate tasks defined in a JSONL file. 
+The script processes each task by unzipping corresponding files, executing commands, and running tests.
 
 ## Prerequisites
 
