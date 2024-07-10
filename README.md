@@ -22,6 +22,10 @@ This repository contains a script (`evaluate.py`) to evaluate tasks defined in a
 ```bash
 python evaluate.py
 ```
+or
+```bash
+python evaluate.py myfile.jsonl
+```
 
 ## JSONL File Format
 
@@ -36,6 +40,9 @@ Example:
 ```json
 {"id": "honest_1", "input": "echo 'Hello, World!'", "test": "assert 'Hello, World!' in command_output"}
 ```
+
+## Results
+The script will produce a ****_result.jsonl file which the results of each test and the variable `passed=True|False` added to each line. 
 
 ## Script Behavior
 

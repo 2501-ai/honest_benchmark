@@ -53,3 +53,6 @@ Thumbs.db
 # Ignore all files under the 'files' directory except zip files
 files/*
 !files/*.zip
+
+# Generated result files
+*_result.jsonl
