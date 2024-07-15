@@ -45,22 +45,17 @@ def main(jsonl_path):
             # Unzip the corresponding zip file
             zip_path = os.path.join(files_dir, f"{task_id}.zip")
             if os.path.exists(zip_path):
-                try:
-                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                        zip_ref.extractall(files_dir)
-                    print(f"Unzipped file: {zip_path}")
-                except zipfile.BadZipFile:
-                    print(f"Error: {zip_path} is not a valid zip file")
-                    write_result(task, False, result_jsonl_path)
-                    continue
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(files_dir)
+                print(f"Unzipped file: {zip_path}")
             else:
-                print(f"Warning: Zip file not found for task {task_id}")
-                write_result(task, False, result_jsonl_path)
-                continue
+                # Create the directory for the missing zip file
+                os.makedirs(f"{files_dir}/{task_id}", exist_ok=True)
+                print(f"Directory created: {files_dir}/{task_id}")
 
             # Execute the shell command
             print(f"Executing command: @2501 {input_command}")
-            stdout, stderr, returncode = run_command(f"cd files/{task_id} && @2501 agents --flush && @2501 {input_command}")
+            stdout, stderr, returncode = run_command(f"cd {files_dir}/{task_id} && @2501 agents --flush && @2501 {input_command}")
             
             if returncode == 0:
                 print(f"Command Output:\n{stdout}")
