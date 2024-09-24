@@ -117,6 +117,7 @@ def main(jsonl_path, testnum, testfrom):
                 write_result(task, passed, result_jsonl_path)
             except Exception as e:
                 print(f"Test failed: {str(e)}", file=sys.stderr)
+                task.error = str(e) + '\n' + sys.stderr
                 write_result(task, False, result_jsonl_path)
 
 if __name__ == "__main__":
