@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import subprocess
 import zipfile
 import argparse
@@ -8,7 +9,8 @@ def run_command(command):
     """Run a shell command and return the output."""
     env = os.environ.copy()
     env['TERM'] = 'xterm'  # Set the TERM environment variable
-    result = subprocess.run(command, shell=True, capture_output=True, text=True, env=env)
+    env['PYTHONIOENCODING'] = 'utf-8'  # Ensure Python uses UTF-8 encoding
+    result = subprocess.run(command, shell=True, capture_output=True, text=True, env=env, timeout=300)
     return result.stdout.strip(), result.stderr.strip(), result.returncode
 
 def write_result(task, passed, result_jsonl_path):
@@ -17,7 +19,7 @@ def write_result(task, passed, result_jsonl_path):
     with open(result_jsonl_path, 'a') as result_file:
         result_file.write(json.dumps(task) + '\n')
 
-def main(jsonl_path):
+def main(jsonl_path, testnum):
     result_jsonl_path = f'{jsonl_path}_result.jsonl'
     files_dir = 'files'
 
@@ -27,6 +29,9 @@ def main(jsonl_path):
     # Read the JSONL file line by line
     with open(jsonl_path, 'r') as file:
         for line in file:
+            if testnum is not None:
+                if json.loads(line)['id'] != testnum:
+                    continue
             # Parse the JSON line
             try:
                 task = json.loads(line)
@@ -55,13 +60,24 @@ def main(jsonl_path):
 
             # Execute the shell command
             print(f"Executing command: @2501 {input_command}")
-            stdout, stderr, returncode = run_command(f"cd {files_dir}/{task_id} && @2501 agents --flush && @2501 {input_command}")
+            # Flush agents and check for errors
+            flush_stdout, flush_stderr, flush_returncode = run_command(f"cd {files_dir}/{task_id} && @2501 agents --flush")
+            if flush_returncode != 0:
+                print(f"Error flushing agents: {flush_stderr}")
+                write_result(task, False, result_jsonl_path)
+                continue
+
+            print(f"Running command: cd {files_dir}/{task_id} && @2501 {input_command}")
+            stdout, stderr, returncode = run_command(f"cd {files_dir}/{task_id} && @2501 {input_command}")
+            print(f"Command stdout: \n{stdout}")
+            print(f"Command stderr: {stderr}")
+            print(f"Command returncode: {returncode}")
             
-            if returncode == 0:
-                print(f"Command Output:\n{stdout}")
-            else:
+            if returncode != 0:
                 print(f"Command failed with return code {returncode}")
                 print(f"Error output:\n{stderr}")
+                write_result(task, False, result_jsonl_path)
+                continue
 
             # Run the test command
             print(f"Running test: {test_command}")
@@ -74,7 +90,6 @@ def main(jsonl_path):
                     'command_error': stderr,
                     'command_returncode': returncode
                 }
-
                 test_locals = {}
                 
                 # Execute the test command with the task-specific globals
@@ -86,11 +101,13 @@ def main(jsonl_path):
                 passed = output.strip().upper() == "PASS"
                 write_result(task, passed, result_jsonl_path)
             except Exception as e:
-                print(f"Test failed: {str(e)}")
+                print(f"Test failed: {str(e)}", file=sys.stderr)
                 write_result(task, False, result_jsonl_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate tasks from a JSONL file.')
     parser.add_argument('problem_file', type=str, help='Path to the JSONL file containing the tasks.', nargs='?', default='honest_benchmark.jsonl')
+    parser.add_argument('--test', type=str, help='Test number to run.', default=None, dest='testnum')
     args = parser.parse_args()
-    main(args.problem_file)
+    print("args", args)
+    main(args.problem_file, args.testnum)
