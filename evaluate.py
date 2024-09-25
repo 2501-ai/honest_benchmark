@@ -87,7 +87,7 @@ def main(jsonl_path, testnum, testfrom):
             print(f"Command stdout: \n{stdout}")
             print(f"Command stderr: {stderr}")
             print(f"Command returncode: {returncode}")
-            
+
             if returncode != 0:
                 print(f"Command failed with return code {returncode}")
                 print(f"Error output:\n{stderr}")
