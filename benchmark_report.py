@@ -1,6 +1,8 @@
 import json
 from datetime import datetime
 
+from utils.file import load_config
+
 
 class BenchmarkReport:
     def __init__(self, benchmark_name, config_file='benchmark_config.json', retry_limit=3):
@@ -23,23 +25,56 @@ class BenchmarkReport:
                 "min_accuracy": 1.0
             }
         }
-        self.config = self.load_config(config_file)
+        self.config = load_config(config_file)
         self.model_pairs = self.config.get('model_pairs', [])
 
-    def load_config(self, config_file):
-        try:
-            with open(config_file, 'r') as file:
-                return json.load(file)
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error loading configuration: {e}")
-            return {"model_pairs": [], "available_models": []}
+    def add_test(self, test_name, description):
+        """
+        Add a new test entry to the benchmark report.
 
-    def add_test(self, test_name, description, results):
+        Args:
+            test_name (str): The name of the test.
+            description (str): The description of the test.
+        """
         self.tests.append({
             "test_name": test_name,
             "description": description,
-            "results": results
+            "results": []
         })
+
+    def add_result(self, task_id, input_command, script, passed, retries, error_message=None):
+        """
+        Add the result of a task to the most recent test in the report.
+
+        Args:
+            task_id (str): The ID of the task.
+            input_command (str): The input command executed.
+            script (str): The test script path or inline test script.
+            passed (bool): Whether the task passed or failed.
+            retries (int): The number of retries performed.
+            error_message (str, optional): Any error message if the test failed.
+        """
+        if not self.tests:
+            print("No test has been added to attach this result.")
+            return
+
+        result_entry = {
+            'id': task_id,
+            'input': input_command,
+            'script': script,
+            'passed': passed,
+            'retries': retries,
+            'error_message': error_message,
+            'metrics': {
+                'accuracy': 1.0 if passed else 0.0,
+                'duration_ms': 0  # Placeholder for duration, can be updated later
+            }
+        }
+
+        # Append the result to the most recent test
+        self.tests[-1]['results'].append(result_entry)
+
+        # Update summary after adding the result
         self._update_summary()
 
     def _update_summary(self):
@@ -50,9 +85,9 @@ class BenchmarkReport:
 
         for test in self.tests:
             for result in test['results']:
-                if result['status'] == 'completed':
+                if result['passed']:
                     completed_tests += 1
-                    total_duration += result.get('duration_ms', 0)
+                    total_duration += result['metrics'].get('duration_ms', 0)
                     total_accuracy += result['metrics'].get('accuracy', 0)
                     if result.get('duration_ms', 0) > self.summary['overall_metrics']['max_duration_ms']:
                         self.summary['overall_metrics']['max_duration_ms'] = result['duration_ms']
@@ -73,7 +108,13 @@ class BenchmarkReport:
             self.summary['average_duration_ms'] = total_duration / completed_tests
             self.summary['average_accuracy'] = total_accuracy / completed_tests
 
-    def save_to_file(self, filename):
+    def save_to_file(self, output_dir):
+        """
+        Save the benchmark report to a JSON file.
+
+        Args:
+            output_dir (str): The directory where the report will be saved.
+        """
         data = {
             "benchmark": self.benchmark_name,
             "date": self.date,
@@ -82,17 +123,7 @@ class BenchmarkReport:
             "tests": self.tests,
             "summary": self.summary
         }
-        with open(filename, 'w') as file:
+        output_path = f"{output_dir}/benchmark_report_{self.date}.json"
+        with open(output_path, 'w') as file:
             json.dump(data, file, indent=4)
-
-def extract_tests_from_jsonl(jsonl_path):
-    tests = []
-    with open(jsonl_path, 'r') as file:
-        for line in file:
-            test = json.loads(line)
-            if 'script_path' in test:
-                test['test_script'] = None  # Remove 'test_script' if 'script_path' exists
-            elif 'test_script' in test:
-                test['script_path'] = None  # Remove 'script_path' if 'test_script' exists
-            tests.append(test)
-    return tests
+        print(f"Benchmark report saved to {output_path}")

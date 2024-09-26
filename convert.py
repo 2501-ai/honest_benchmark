@@ -4,7 +4,7 @@ import os
 
 def convert_test_format(input_file, output_file):
     """
-    Convert test JSONL file format to include 'test_script' and other updates.
+    Convert test JSONL old file format to include 'test_script' and other updates.
 
     Args:
         input_file (str): Path to the input JSONL file.

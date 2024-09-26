@@ -1,9 +1,9 @@
 import argparse
 import os
 
-from lib import BenchmarkReport, extract_tests_from_jsonl
+from benchmark_report import BenchmarkReport
 from task_processor import process_task
-from utils.file import remove_previous_folders
+from utils.file import remove_previous_folders, extract_tests_from_jsonl
 
 
 def main(jsonl_path, benchmark_config, testnum, testfrom):
@@ -17,11 +17,9 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
         testfrom (str): Test ID to start running from.
     """
     dataset_dir = 'datasets'
-    result_dir = 'results'
-
     remove_previous_folders(dataset_dir)
+
     os.makedirs(dataset_dir, exist_ok=True)
-    os.makedirs(result_dir, exist_ok=True)
 
     # Load benchmark configuration
     benchmark = BenchmarkReport("AI Model Pair Benchmark", config_file=benchmark_config)
@@ -39,8 +37,10 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
             else:
                 continue
 
-        result_jsonl_path = os.path.join(result_dir, f'{task["id"]}_result.jsonl')
-        process_task(task, dataset_dir, result_jsonl_path, max_retries=benchmark.retry_limit)
+        process_task(task, dataset_dir, benchmark, max_retries=benchmark.retry_limit)
+
+    # Save the results and metadata
+    benchmark.save_to_file('./results/')
 
 
 if __name__ == "__main__":

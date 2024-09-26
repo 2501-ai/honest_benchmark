@@ -1,29 +1,24 @@
 import os
+import sys
 import zipfile
 
 from utils.command import run_command
-from utils.result import write_result
 
 
-def process_task(task, files_dir, result_jsonl_path, max_retries=3):
+def process_task(task, files_dir, benchmark_report, max_retries=3):
     """
-    Process a single task.
+    Process a single task and record the result in the benchmark report.
 
     Args:
         task (dict): The task dictionary.
         files_dir (str): The directory containing the files.
-        result_jsonl_path (str): Path to the result JSONL file.
+        benchmark_report (BenchmarkReport): Instance of BenchmarkReport to store results.
         max_retries (int): Maximum number of retries for the task.
     """
     task_id = task['id']
     input_command = task['input']
-
-    if 'script_path' in task:
-        test_command = f"python3 {task['script_path']}"
-    elif 'test_script' in task:
-        test_command = task['test_script']
-    else:
-        raise ValueError("No test script specified in the task.")
+    script_path = task.get('script_path', None)
+    test_script = task.get('test_script', None)
 
     print(f"Processing task {task_id}")
 
@@ -34,21 +29,16 @@ def process_task(task, files_dir, result_jsonl_path, max_retries=3):
             zip_ref.extractall(files_dir)
         print(f"Unzipped file: {zip_path}")
     else:
-        os.makedirs(f"{files_dir}/{task_id}", exist_ok=True)
-        print(f"Directory created: {files_dir}/{task_id}")
+        # Throw an error if the zip file is not found
+        print(f"Zip file not found: {zip_path}")
 
     retries = 0
+    passed = False
+    error_message = None
+
     while retries <= max_retries:
         try:
-            # Flush the agents
-            flush_stdout, flush_stderr, flush_returncode = run_command(
-                f"cd {files_dir}/{task_id} && @2501 agents --flush")
-            if flush_returncode != 0:
-                print(f"Error flushing agents: {flush_stderr}")
-                retries += 1
-                continue
-
-            # Execute the @2501 command
+            # Execute the input command
             print(f"Executing command: @2501 {input_command}")
             stdout, stderr, returncode = run_command(f"cd {files_dir}/{task_id} && @2501 {input_command}")
             print(f"Command stdout: {stdout}")
@@ -61,28 +51,24 @@ def process_task(task, files_dir, result_jsonl_path, max_retries=3):
                 retries += 1
                 continue
 
-            # Run the test command
-            print(f"Running test: {test_command}")
-            try:
-                test_locals = {}
-                exec(test_command, globals(), test_locals)
-                output = test_locals['output']
-                print(f"Test {task_id} output: {output}")
+            # Run the test command or script
+            if script_path:
+                print(f"Executing script at {script_path}")
+                exec(open(script_path).read())
+            elif test_script:
+                print(f"Executing in-line test script")
+                exec(test_script)
 
-                passed = output.strip().upper() == "PASS"
-                write_result(task, passed, result_jsonl_path, retries=retries)
-                return
+            output = locals().get('output', 'FAIL')
+            print(f"Test {task_id} output: {output}")
 
-            except Exception as e:
-                print(f"Test failed: {str(e)}")
-                write_result(task, False, result_jsonl_path, error_message=str(e), retries=retries)
-                retries += 1
+            passed = output.strip().upper() == "PASS"
+            break
 
         except Exception as e:
-            print(f"Processing failed: {str(e)}")
-            write_result(task, False, result_jsonl_path, error_message=str(e), retries=retries)
+            print(f"Test failed: {str(e)}", file=sys.stderr)
+            error_message = str(e)
             retries += 1
 
-    # Final result after max retries
-    if retries > max_retries:
-        write_result(task, False, result_jsonl_path, error_message="Max retries exceeded", retries=max_retries)
+    # Store the result in the benchmark report
+    benchmark_report.add_result(task_id, input_command, script_path or test_script, passed, retries, error_message)
