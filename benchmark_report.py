@@ -9,7 +9,7 @@ class BenchmarkReport:
         self.benchmark_name = benchmark_name
         self.retry_limit = retry_limit
         self.model_pairs = []
-        self.tests = []
+        self.tests = []  # Initialize the tests field
         self.date = datetime.now().strftime('%Y-%m-%d')
         self.summary = {
             "total_tests": 0,
@@ -36,13 +36,15 @@ class BenchmarkReport:
             test_name (str): The name of the test.
             description (str): The description of the test.
         """
+        # Append the test entry to the tests list
         self.tests.append({
             "test_name": test_name,
             "description": description,
             "results": []
         })
 
-    def add_result(self, task_id, input_command, script, passed, retries, error_message=None):
+    def add_result(self, task_id, input_command, script, passed, retries, duration_ms=0, accuracy=None,
+                   error_message=None):
         """
         Add the result of a task to the most recent test in the report.
 
@@ -52,11 +54,17 @@ class BenchmarkReport:
             script (str): The test script path or inline test script.
             passed (bool): Whether the task passed or failed.
             retries (int): The number of retries performed.
+            duration_ms (int, optional): Duration of the test in milliseconds.
+            accuracy (float, optional): Accuracy of the result. Defaults to 1.0 if passed, 0.0 otherwise.
             error_message (str, optional): Any error message if the test failed.
         """
         if not self.tests:
             print("No test has been added to attach this result.")
             return
+
+        # Determine accuracy if not provided
+        if accuracy is None:
+            accuracy = 1.0 if passed else 0.0
 
         result_entry = {
             'id': task_id,
@@ -66,8 +74,8 @@ class BenchmarkReport:
             'retries': retries,
             'error_message': error_message,
             'metrics': {
-                'accuracy': 1.0 if passed else 0.0,
-                'duration_ms': 0  # Placeholder for duration, can be updated later
+                'accuracy': accuracy,
+                'duration_ms': duration_ms  # Pass duration here
             }
         }
 
@@ -85,18 +93,23 @@ class BenchmarkReport:
 
         for test in self.tests:
             for result in test['results']:
+                duration = result['metrics'].get('duration_ms', 0) or 0  # Ensure duration is not None
+                accuracy = result['metrics'].get('accuracy', 0) or 0  # Ensure accuracy is not None
+
                 if result['passed']:
                     completed_tests += 1
-                    total_duration += result['metrics'].get('duration_ms', 0)
-                    total_accuracy += result['metrics'].get('accuracy', 0)
-                    if result.get('duration_ms', 0) > self.summary['overall_metrics']['max_duration_ms']:
-                        self.summary['overall_metrics']['max_duration_ms'] = result['duration_ms']
-                    if result.get('duration_ms', 0) < self.summary['overall_metrics']['min_duration_ms']:
-                        self.summary['overall_metrics']['min_duration_ms'] = result['duration_ms']
-                    if result['metrics'].get('accuracy', 0) > self.summary['overall_metrics']['max_accuracy']:
-                        self.summary['overall_metrics']['max_accuracy'] = result['metrics']['accuracy']
-                    if result['metrics'].get('accuracy', 0) < self.summary['overall_metrics']['min_accuracy']:
-                        self.summary['overall_metrics']['min_accuracy'] = result['metrics']['accuracy']
+                    total_duration += duration
+                    total_accuracy += accuracy
+
+                    # Update max/min duration and accuracy metrics
+                    if duration > self.summary['overall_metrics']['max_duration_ms']:
+                        self.summary['overall_metrics']['max_duration_ms'] = duration
+                    if duration < self.summary['overall_metrics']['min_duration_ms']:
+                        self.summary['overall_metrics']['min_duration_ms'] = duration
+                    if accuracy > self.summary['overall_metrics']['max_accuracy']:
+                        self.summary['overall_metrics']['max_accuracy'] = accuracy
+                    if accuracy < self.summary['overall_metrics']['min_accuracy']:
+                        self.summary['overall_metrics']['min_accuracy'] = accuracy
                 else:
                     failed_tests += 1
 
@@ -104,6 +117,7 @@ class BenchmarkReport:
         self.summary['total_results'] = sum(len(test['results']) for test in self.tests)
         self.summary['completed_tests'] = completed_tests
         self.summary['failed_tests'] = failed_tests
+
         if completed_tests > 0:
             self.summary['average_duration_ms'] = total_duration / completed_tests
             self.summary['average_accuracy'] = total_accuracy / completed_tests

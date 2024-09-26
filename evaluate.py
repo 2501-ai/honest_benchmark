@@ -37,6 +37,7 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
             else:
                 continue
 
+        benchmark.add_test(task['id'], task.get('description', ''))
         process_task(task, dataset_dir, benchmark, max_retries=benchmark.retry_limit)
 
     # Save the results and metadata

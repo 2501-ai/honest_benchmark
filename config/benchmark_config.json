@@ -1,10 +1,6 @@
 {
   "model_pairs": [
-    ["openai/gpt4o", "anthropic/claude3-opus"],
-    ["openai/gpt4o", "anthropic/claude3-5-sonnet"],
-    ["openai/gpt4o", "meta/llama3-70b-cerebras"],
-    ["anthropic/claude3-5-sonnet", "anthropic/claude3-opus"],
-    ["anthropic/claude3-5-sonnet", "meta/llama3-70b-cerebras"]
+    ["openai/gpt4o", "anthropic/claude3-opus"]
   ],
   "available_models": [
     "anthropic/claude3-opus",

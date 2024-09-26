@@ -51,15 +51,16 @@ def process_task(task, files_dir, benchmark_report, max_retries=3):
                 retries += 1
                 continue
 
+            test_local = locals()
             # Run the test command or script
             if script_path:
                 print(f"Executing script at {script_path}")
-                exec(open(script_path).read())
+                exec(open(script_path).read(), globals(), test_local)
             elif test_script:
                 print(f"Executing in-line test script")
-                exec(test_script)
+                exec(test_script, globals(), test_local)
 
-            output = locals().get('output', 'FAIL')
+            output = test_local.get('output', 'FAIL')
             print(f"Test {task_id} output: {output}")
 
             passed = output.strip().upper() == "PASS"
@@ -71,4 +72,4 @@ def process_task(task, files_dir, benchmark_report, max_retries=3):
             retries += 1
 
     # Store the result in the benchmark report
-    benchmark_report.add_result(task_id, input_command, script_path or test_script, passed, retries, error_message)
+    benchmark_report.add_result(task_id, input_command, script_path or test_script, passed, retries, error_message=error_message)
