@@ -21,10 +21,10 @@ def extract_tests_from_jsonl(jsonl_path):
     with open(jsonl_path, 'r') as file:
         for line in file:
             test = json.loads(line)
-            if 'script_path' in test:
-                test['test_script'] = None  # Remove 'test_script' if 'script_path' exists
+            if 'test_command' in test:
+                test['test_script'] = None  # Remove 'test_script' if 'test_command' exists
             elif 'test_script' in test:
-                test['script_path'] = None  # Remove 'script_path' if 'test_script' exists
+                test['test_command'] = None  # Remove 'test_command' if 'test_script' exists
             tests.append(test)
     return tests
 

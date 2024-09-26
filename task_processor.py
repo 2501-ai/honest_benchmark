@@ -17,7 +17,7 @@ def process_task(task, files_dir, benchmark_report, max_retries=3):
     """
     task_id = task['id']
     input_command = task['input']
-    script_path = task.get('script_path', None)
+    test_command = task.get('test_command', None)
     test_script = task.get('test_script', None)
 
     print(f"Processing task {task_id}")
@@ -29,8 +29,8 @@ def process_task(task, files_dir, benchmark_report, max_retries=3):
             zip_ref.extractall(files_dir)
         print(f"Unzipped file: {zip_path}")
     else:
-        # Throw an error if the zip file is not found
-        print(f"Zip file not found: {zip_path}")
+        # If the zip file does not exist, create the dir
+        os.makedirs(os.path.join(files_dir, task_id), exist_ok=True)
 
     retries = 0
     passed = False
@@ -38,6 +38,8 @@ def process_task(task, files_dir, benchmark_report, max_retries=3):
 
     while retries <= max_retries:
         try:
+            if retries > 0:
+                print(f"Retrying task {task_id} (attempt {retries + 1})")
             # Execute the input command
             print(f"Executing command: @2501 {input_command}")
             stdout, stderr, returncode = run_command(f"cd {files_dir}/{task_id} && @2501 {input_command}")
@@ -53,9 +55,14 @@ def process_task(task, files_dir, benchmark_report, max_retries=3):
 
             test_local = locals()
             # Run the test command or script
-            if script_path:
-                print(f"Executing script at {script_path}")
-                exec(open(script_path).read(), globals(), test_local)
+            if test_command:
+                print(f"Executing script at {test_command}")
+                # execute the script at path, with args
+                out, err, code = run_command(test_command)
+                print(f"Test command stdout: {out}")
+                print(f"Test command stderr: {err}")
+                print(f"Test command returncode: {code}")
+                test_local['output'] = code == 0 and 'PASS' or 'FAIL'
             elif test_script:
                 print(f"Executing in-line test script")
                 exec(test_script, globals(), test_local)
@@ -72,4 +79,5 @@ def process_task(task, files_dir, benchmark_report, max_retries=3):
             retries += 1
 
     # Store the result in the benchmark report
-    benchmark_report.add_result(task_id, input_command, script_path or test_script, passed, retries, error_message=error_message)
+    benchmark_report.add_result(task_id, input_command, test_command or test_script, passed, retries,
+                                error_message=error_message)

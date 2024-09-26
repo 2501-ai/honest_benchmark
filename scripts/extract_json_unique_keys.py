@@ -2,21 +2,6 @@ import argparse
 import json
 
 
-def extract_unique_keys(data, keys_set=None):
-    if keys_set is None:
-        keys_set = set()
-
-    if isinstance(data, dict):
-        for key, value in data.items():
-            keys_set.add(key)
-            extract_unique_keys(value, keys_set)
-    elif isinstance(data, list):
-        for item in data:
-            extract_unique_keys(item, keys_set)
-
-    return keys_set
-
-
 def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description='Extract unique keys from a JSON file.')
@@ -28,12 +13,30 @@ def main():
         data = json.load(file)
 
     # Extract unique keys
-    unique_keys = extract_unique_keys(data)
+    unique_keys = set(data)
 
     # Print the unique keys
-    print("Unique keys found in the JSON file:")
-    for key in sorted(unique_keys):
-        print(key)
+    # fix this line to filter keys not in ['id', 'name', 'age']
+    expected = [
+        "occupation",
+        "hobbies",
+        "pets",
+        "username",
+        "subscription_status",
+        "preferences",
+        "membership_start_date",
+        "first_name",
+        "last_name",
+        "company",
+        "department",
+        "years_of_experience",
+        "phone",
+        "last_login",
+        "is_verified"
+    ]
+
+    output = len(unique_keys.difference(expected)) == 0 and len(unique_keys) == len(expected)
+    assert output, f"Expected keys: {expected}, got additional fields: {list(unique_keys.difference(expected))}"
 
 
 if __name__ == "__main__":

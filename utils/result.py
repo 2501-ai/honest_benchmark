@@ -16,8 +16,8 @@ def write_result(task, passed, result_jsonl_path, error_message=None, retries=0)
     task['retries'] = retries
     if error_message:
         task['error'] = error_message
-    if 'script_path' in task:
-        task['test_script'] = task.pop('script_path')
+    if 'test_command' in task:
+        task['test_script'] = task.pop('test_command')
     if 'test_script' in task:
         task['script'] = task.pop('test_script')
     task.pop('status', None)
