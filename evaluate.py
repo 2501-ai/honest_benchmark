@@ -41,7 +41,7 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
         process_task(task, dataset_dir, benchmark, max_retries=benchmark.retry_limit)
 
     # Save the results and metadata
-    benchmark.save_to_file('./results/')
+    benchmark.save_to_file()
 
 
 if __name__ == "__main__":

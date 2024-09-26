@@ -2,10 +2,11 @@ import os
 import sys
 import zipfile
 
+from benchmark_report import BenchmarkReport
 from utils.command import run_command
 
 
-def process_task(task, files_dir, benchmark_report, max_retries=3):
+def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries=3):
     """
     Process a single task and record the result in the benchmark report.
 

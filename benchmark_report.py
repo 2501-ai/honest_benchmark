@@ -1,15 +1,18 @@
 import json
+import os
 from datetime import datetime
 
 from utils.file import load_config
 
 
 class BenchmarkReport:
+    existing_data: dict[str, any]
+
     def __init__(self, benchmark_name, config_file='benchmark_config.json', retry_limit=3):
         self.benchmark_name = benchmark_name
         self.retry_limit = retry_limit
         self.model_pairs = []
-        self.tests = []  # Initialize the tests field
+        self.tests: list = []
         self.date = datetime.now().strftime('%Y-%m-%d')
         self.summary = {
             "total_tests": 0,
@@ -27,24 +30,41 @@ class BenchmarkReport:
         }
         self.config = load_config(config_file)
         self.model_pairs = self.config.get('model_pairs', [])
+        self.output_path = f"./results/benchmark_report_{self.date}.json"
 
-    def add_test(self, test_name, description):
+        if os.path.exists(self.output_path):
+            with open(self.output_path, 'r') as file:
+                self.existing_data = json.load(file)
+        else:
+            self.existing_data = {
+                "benchmark": self.benchmark_name,
+                "date": self.date,
+                "retry_limit": self.retry_limit,
+                "model_pairs": self.model_pairs[0],
+                "tests": [],
+                "summary": self.summary
+            }
+
+    def add_test(self, name, description):
         """
         Add a new test entry to the benchmark report.
 
         Args:
-            test_name (str): The name of the test.
+            name (str): The name of the test.
             description (str): The description of the test.
         """
         # Append the test entry to the tests list
-        self.tests.append({
-            "test_name": test_name,
-            "description": description,
-            "results": []
-        })
+        test_exists = any(test['name'] == name for test in self.existing_data['tests'])
+        if not test_exists:
+            self.existing_data['tests'].append({
+                "name": name,
+                "description": description,
+                "results": []
+            })
 
     def add_result(self, task_id, input_command, script, passed, retries, duration_ms=0, accuracy=None,
                    error_message=None):
+
         """
         Add the result of a task to the most recent test in the report.
 
@@ -58,29 +78,31 @@ class BenchmarkReport:
             accuracy (float, optional): Accuracy of the result. Defaults to 1.0 if passed, 0.0 otherwise.
             error_message (str, optional): Any error message if the test failed.
         """
-        if not self.tests:
-            print("No test has been added to attach this result.")
-            return
 
-        # Determine accuracy if not provided
-        if accuracy is None:
-            accuracy = 1.0 if passed else 0.0
+        for test in self.existing_data.get('tests', []):
+            if test['name'] == task_id:
+                # Determine accuracy if not provided
+                if accuracy is None:
+                    accuracy = 1.0 if passed else 0.0
 
-        result_entry = {
-            'id': task_id,
-            'input': input_command,
-            'script': script,
-            'passed': passed,
-            'retries': retries,
-            'error_message': error_message,
-            'metrics': {
-                'accuracy': accuracy,
-                'duration_ms': duration_ms  # Pass duration here
-            }
-        }
+                result_entry = {
+                    "task_id": task_id,
+                    "input_command": input_command,
+                    "script": script,
+                    "passed": passed,
+                    "retries": retries,
+                    "metrics": {
+                        "duration_ms": duration_ms,
+                        "accuracy": accuracy,
+                    },
+                    "error_message": error_message,
+                }
 
-        # Append the result to the most recent test
-        self.tests[-1]['results'].append(result_entry)
+                # Append the result to the specified test
+                test['results'].append(result_entry)
+                break
+        else:
+            print(f"Test with name '{task_id}' does not exist. Add the test before adding results.")
 
         # Update summary after adding the result
         self._update_summary()
@@ -90,14 +112,18 @@ class BenchmarkReport:
         total_accuracy = 0
         completed_tests = 0
         failed_tests = 0
+        test_durations = {}
 
-        for test in self.tests:
+        for test in self.existing_data.get('tests', []):
             for result in test['results']:
                 duration = result['metrics'].get('duration_ms', 0) or 0  # Ensure duration is not None
                 accuracy = result['metrics'].get('accuracy', 0) or 0  # Ensure accuracy is not None
 
                 if result['passed']:
                     completed_tests += 1
+                    if test['name'] not in test_durations:
+                        test_durations[test['name']] = 0
+                    test_durations[test['name']] += duration
                     total_duration += duration
                     total_accuracy += accuracy
 
@@ -113,8 +139,8 @@ class BenchmarkReport:
                 else:
                     failed_tests += 1
 
-        self.summary['total_tests'] = len(self.tests)
-        self.summary['total_results'] = sum(len(test['results']) for test in self.tests)
+        self.summary['total_tests'] = len(self.existing_data.get('tests', []))
+        self.summary['total_results'] = sum(len(test['results']) for test in self.existing_data.get('tests', []))
         self.summary['completed_tests'] = completed_tests
         self.summary['failed_tests'] = failed_tests
 
@@ -122,22 +148,17 @@ class BenchmarkReport:
             self.summary['average_duration_ms'] = total_duration / completed_tests
             self.summary['average_accuracy'] = total_accuracy / completed_tests
 
-    def save_to_file(self, output_dir):
+        for test in self.existing_data.get('tests', []):
+            if test['name'] in test_durations:
+                test['total_duration_ms'] = test_durations[test['name']]
+
+    def save_to_file(self):
         """
         Save the benchmark report to a JSON file.
-
-        Args:
-            output_dir (str): The directory where the report will be saved.
         """
-        data = {
-            "benchmark": self.benchmark_name,
-            "date": self.date,
-            "retry_limit": self.retry_limit,
-            "model_pairs": self.model_pairs,
-            "tests": self.tests,
-            "summary": self.summary
-        }
-        output_path = f"{output_dir}/benchmark_report_{self.date}.json"
-        with open(output_path, 'w') as file:
-            json.dump(data, file, indent=4)
-        print(f"Benchmark report saved to {output_path}")
+        self._update_summary()
+
+        # Save the updated data to a file
+        with open(self.output_path, 'w') as file:
+            json.dump(self.existing_data, file, indent=4)
+        print(f"Benchmark report saved to {self.output_path}")
