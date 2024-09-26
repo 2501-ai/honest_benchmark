@@ -46,9 +46,9 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate tasks from a JSONL file.')
     parser.add_argument('problem_file', type=str, help='Path to the JSONL file containing the tasks.', nargs='?',
-                        default='honest_benchmark.jsonl')
+                        default='./config/honest_benchmark.jsonl')
     parser.add_argument('--benchmark-config', type=str, help='Path to the benchmark configuration file.',
-                        default='benchmark_config.json', dest='benchmark_config')
+                        default='./config/benchmark_config.json', dest='benchmark_config')
     parser.add_argument('--test', type=str, help='Test ID to run.', default=None, dest='testnum')
     parser.add_argument('--from', type=str, help='Test ID to run from.', default=None, dest='testfrom')
     args = parser.parse_args()
