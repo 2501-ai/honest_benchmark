@@ -1,5 +1,5 @@
-# outputs
-outputs/
+# results
+results/
 
 # Logs
 logs/
@@ -26,7 +26,7 @@ jspm_packages/
 # dotenv environment variables file
 .env
 
-# Build outputs
+# Build results
 build/
 dist/
 .next/
@@ -49,8 +49,8 @@ Thumbs.db
 *.temp
 
 # Ignore all files under the 'files' directory except zip files
-files/*
-!files/*.zip
+datasets/*
+!datasets/*.zip
 
 # Generated result files
 *_result.jsonl
