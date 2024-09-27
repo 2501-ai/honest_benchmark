@@ -47,7 +47,7 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
 
 
 def signal_handler(sig, frame):
-    print('You pressed CTRL+C! Performing cleanup...')
+    print('You pressed CTRL+C! Exiting...')
     # Perform any necessary cleanup here
     sys.exit(0)
 
