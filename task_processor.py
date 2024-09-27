@@ -1,11 +1,16 @@
 import os
 import signal
+import subprocess
 import sys
 import time
 import zipfile
 
 from benchmark_report import BenchmarkReport
 from utils.command import run_command
+
+
+def flush_agents():
+    stdout, stderr, returncode = run_command(f"@2501 agents --flush")
 
 
 def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries=3):
@@ -46,6 +51,7 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
         try:
             if retries > 0:
                 print(f"Retrying task {task_id} (attempt {retries + 1})")
+            flush_agents()
             # Execute the input command
             print(f"Executing command: @2501 {input_command}")
             stdout, stderr, returncode = run_command(f"cd {files_dir}/{task_id} && @2501 {input_command}")
@@ -72,6 +78,9 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
                 signal.alarm(5) # 5 seconds timeout
                 try:
                     exec(test_script, globals(), test_local)
+                except KeyboardInterrupt:
+                    print('Interrupted! Terminating.')
+                    sys.exit(0)
                 finally:
                     signal.alarm(0)
 
@@ -97,7 +106,9 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
     benchmark_report.add_result(task_id, input_command, test_command or test_script, passed, retries, duration_ms,
                                 error_message=error_message)
 
+
 def signal_handler(signum, frame):
-    raise TimeoutException("Timed out!")
+    raise TimeoutException(f"Timed out! {signum}")
+
 
 class TimeoutException(Exception): pass
