@@ -11,8 +11,6 @@ class BenchmarkReport:
     def __init__(self, benchmark_name, config_file='benchmark_config.json', retry_limit=3):
         self.benchmark_name = benchmark_name
         self.retry_limit = retry_limit
-        self.model_pairs = []
-        self.tests: list = []
         self.date = datetime.now().strftime('%Y-%m-%d')
         self.summary = {
             "total_tests": 0,
@@ -28,11 +26,14 @@ class BenchmarkReport:
                 "min_accuracy": 1.0
             }
         }
+        self.model_pairs = []
+        self.tests: list = []
         self.config = load_config(config_file)
         self.model_pairs = self.config.get('model_pairs', [])
+        self.reset = self.config.get('reset', True) # Reset the Benchmark results if True, else append the results for stats.
         self.output_path = f"./results/benchmark_report_{self.date}.json"
 
-        if os.path.exists(self.output_path):
+        if os.path.exists(self.output_path) and not self.reset:
             with open(self.output_path, 'r') as file:
                 self.existing_data = json.load(file)
         else:

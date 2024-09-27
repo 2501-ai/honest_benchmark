@@ -1,5 +1,7 @@
 import os
+import signal
 import sys
+import time
 import zipfile
 
 from benchmark_report import BenchmarkReport
@@ -36,6 +38,9 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
     retries = 0
     passed = False
     error_message = None
+    duration_ms = 0
+    start_time = time.time()
+    accuracy = 0
 
     while retries <= max_retries:
         try:
@@ -44,13 +49,11 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
             # Execute the input command
             print(f"Executing command: @2501 {input_command}")
             stdout, stderr, returncode = run_command(f"cd {files_dir}/{task_id} && @2501 {input_command}")
-            print(f"Command stdout: {stdout}")
-            print(f"Command stderr: {stderr}")
-            print(f"Command returncode: {returncode}")
+            print(f"Command returncode: {returncode} | stdout: {stdout}")
+            if stderr.strip(): print(f"Command stderr: {stderr}")
 
             if returncode != 0:
-                print(f"Command failed with return code {returncode}")
-                print(f"Error output: {stderr}")
+                print(f"Command failed with return code {returncode} | Error output: {stderr}")
                 retries += 1
                 continue
 
@@ -60,25 +63,41 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
                 print(f"Executing script at {test_command}")
                 # execute the script at path, with args
                 out, err, code = run_command(test_command)
-                print(f"Test command stdout: {out}")
-                print(f"Test command stderr: {err}")
-                print(f"Test command returncode: {code}")
+                print(f"Test command returncode: {code} | stdout: {out}")
+                if err.strip(): print(f"Test command stderr: {err}")
                 test_local['output'] = code == 0 and 'PASS' or 'FAIL'
             elif test_script:
                 print(f"Executing in-line test script")
-                exec(test_script, globals(), test_local)
+                signal.signal(signal.SIGALRM, signal_handler)
+                signal.alarm(5) # 5 seconds timeout
+                try:
+                    exec(test_script, globals(), test_local)
+                finally:
+                    signal.alarm(0)
 
             output = test_local.get('output', 'FAIL')
             print(f"Test {task_id} output: {output}")
 
             passed = output.strip().upper() == "PASS"
+            # Should be improved
+            accuracy = 1.0 / (retries + 1) if passed else 0.0
             break
 
         except Exception as e:
             print(f"Test failed: {str(e)}", file=sys.stderr)
             error_message = str(e)
-            retries += 1
+            # Retry only it's a server error
+            if "The server has returned an error" in str(e):
+                retries += 1
+            else:
+                break
 
+    duration_ms = int((time.time() - start_time) * 1000)
     # Store the result in the benchmark report
-    benchmark_report.add_result(task_id, input_command, test_command or test_script, passed, retries,
+    benchmark_report.add_result(task_id, input_command, test_command or test_script, passed, retries, duration_ms,
                                 error_message=error_message)
+
+def signal_handler(signum, frame):
+    raise TimeoutException("Timed out!")
+
+class TimeoutException(Exception): pass
