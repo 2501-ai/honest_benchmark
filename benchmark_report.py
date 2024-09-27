@@ -30,7 +30,8 @@ class BenchmarkReport:
         self.tests: list = []
         self.config = load_config(config_file)
         self.model_pairs = self.config.get('model_pairs', [])
-        self.reset = self.config.get('reset', True) # Reset the Benchmark results if True, else append the results for stats.
+        self.reset = self.config.get('reset',
+                                     True)  # Reset the Benchmark results if True, else append the results for stats.
         self.output_path = f"./results/benchmark_report_{self.date}.json"
 
         if os.path.exists(self.output_path) and not self.reset:
