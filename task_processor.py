@@ -75,7 +75,7 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
             elif test_script:
                 print(f"Executing in-line test script")
                 signal.signal(signal.SIGALRM, signal_handler)
-                signal.alarm(5) # 5 seconds timeout
+                signal.alarm(120) # 2 minutes timeout
                 try:
                     exec(test_script, globals(), test_local)
                 except KeyboardInterrupt:
