@@ -150,9 +150,6 @@ class BenchmarkReport:
             self.summary['average_duration_ms'] = total_duration / completed_tests
             self.summary['average_accuracy'] = total_accuracy / completed_tests
 
-        for test in self.existing_data.get('tests', []):
-            if test['name'] in test_durations:
-                test['total_duration_ms'] = test_durations[test['name']]
 
     def save_to_file(self):
         """

@@ -1,5 +1,7 @@
 import argparse
 import os
+import signal
+import sys
 
 from benchmark_report import BenchmarkReport
 from task_processor import process_task
@@ -42,6 +44,15 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
 
     # Save the results and metadata
     benchmark.save_to_file()
+
+
+def signal_handler(sig, frame):
+    print('You pressed CTRL+C! Performing cleanup...')
+    # Perform any necessary cleanup here
+    sys.exit(0)
+
+# Register the signal handler for SIGINT (CTRL+C)
+signal.signal(signal.SIGINT, signal_handler)
 
 
 if __name__ == "__main__":

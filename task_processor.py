@@ -18,6 +18,7 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
         benchmark_report (BenchmarkReport): Instance of BenchmarkReport to store results.
         max_retries (int): Maximum number of retries for the task.
     """
+    start_time = time.time()
     task_id = task['id']
     input_command = task['input']
     test_command = task.get('test_command', None)
@@ -39,7 +40,6 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
     passed = False
     error_message = None
     duration_ms = 0
-    start_time = time.time()
     accuracy = 0
 
     while retries <= max_retries:
