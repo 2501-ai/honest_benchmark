@@ -1,6 +1,5 @@
 import os
 import signal
-import subprocess
 import sys
 import time
 import zipfile
@@ -64,6 +63,8 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
                 continue
 
             test_local = locals()
+            passed = False
+            output = None
             # Run the test command or script
             if test_command:
                 print(f"Executing script at {test_command}")
@@ -71,23 +72,23 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
                 out, err, code = run_command(test_command)
                 print(f"Test command returncode: {code} | stdout: {out}")
                 if err.strip(): print(f"Test command stderr: {err}")
-                test_local['output'] = code == 0 and 'PASS' or 'FAIL'
+                passed = code == 0
+                output = passed and "PASS" or "FAIL"
             elif test_script:
                 print(f"Executing in-line test script")
                 signal.signal(signal.SIGALRM, signal_handler)
-                signal.alarm(120) # 2 minutes timeout
+                signal.alarm(120)  # 2 minutes timeout
                 try:
                     exec(test_script, globals(), test_local)
+                    output = test_local.get('output', 'FAIL').strip().upper()
+                    passed = output == "PASS"
                 except KeyboardInterrupt:
                     print('Interrupted! Terminating.')
                     sys.exit(0)
                 finally:
                     signal.alarm(0)
 
-            output = test_local.get('output', 'FAIL')
-            print(f"Test {task_id} output: {output}")
-
-            passed = output.strip().upper() == "PASS"
+            print(f"Test {task_id} | Passed: {passed}")
             # Should be improved
             accuracy = 1.0 / (retries + 1) if passed else 0.0
             break

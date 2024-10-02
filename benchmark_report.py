@@ -47,20 +47,19 @@ class BenchmarkReport:
                 "summary": self.summary
             }
 
-    def add_test(self, name, description):
+    def add_test(self, task):
         """
         Add a new test entry to the benchmark report.
 
         Args:
-            name (str): The name of the test.
-            description (str): The description of the test.
+            task (dict): The task dictionary containing the test details.
         """
         # Append the test entry to the tests list
-        test_exists = any(test['name'] == name for test in self.existing_data['tests'])
+        test_exists = any(test['name'] == task['id'] for test in self.existing_data['tests'])
         if not test_exists:
             self.existing_data['tests'].append({
-                "name": name,
-                "description": description,
+                "name": task['id'],
+                "tags": task['tags'],
                 "results": []
             })
 
@@ -149,7 +148,6 @@ class BenchmarkReport:
         if completed_tests > 0:
             self.summary['average_duration_ms'] = total_duration / completed_tests
             self.summary['average_accuracy'] = total_accuracy / completed_tests
-
 
     def save_to_file(self):
         """
