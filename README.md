@@ -17,16 +17,19 @@ The script processes each task by unzipping corresponding files, executing comma
 ## Usage
 
 1. Ensure you have Python 3.x installed on your system.
-2. Place the `honest_benchmark.jsonl` file in the same directory as `evaluate.py`.
-3. Create a `files/` directory in the same location and place the corresponding zip files there.
+2. Place the `config/honest_benchmark.jsonl` file in the same directory as `evaluate.py`.
+3. Create a `datasets/` directory in the same location and place the corresponding zip files there.
 4. Run the `evaluate.py` script:
 
 ```bash
-python evaluate.py
-```
-or
-```bash
-python evaluate.py myfile.jsonl
+python evaluate.py  # Reads tasks from honest_benchmark.jsonl
+
+python evaluate.py myfile.jsonl  # Reads tasks from myfile.jsonl
+
+python evaluate.py --test honest_24  # Runs a specific task by ID
+
+python evaluate.py --from honest_24  # Runs all tasks from a specific task ID
+
 ```
 
 ## JSONL File Format
