@@ -38,6 +38,7 @@ class BenchmarkReport:
             with open(self.output_path, 'r') as file:
                 self.existing_data = json.load(file)
         else:
+
             self.existing_data = {
                 "benchmark": self.benchmark_name,
                 "date": self.date,
@@ -153,6 +154,12 @@ class BenchmarkReport:
         """
         Save the benchmark report to a JSON file.
         """
+
+        # Ensure the directory exists
+        directory = os.path.dirname(self.output_path)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory)
+
         self._update_summary()
 
         # Save the updated data to a file
