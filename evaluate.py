@@ -6,6 +6,7 @@ import sys
 from benchmark_report import BenchmarkReport
 from task_processor import process_task
 from utils.file import remove_previous_folders, extract_tests_from_jsonl
+from utils.db_connection import DBConnector
 
 
 def main(jsonl_path, benchmark_config, testnum, testfrom):
@@ -30,6 +31,8 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
     tests = extract_tests_from_jsonl(jsonl_path)
 
     is_test_from = False
+    db_connector = DBConnector()
+
     for task in tests:
         if testnum and task['id'] != testnum:
             continue
@@ -41,6 +44,24 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
 
         benchmark.add_test(task)
         process_task(task, dataset_dir, benchmark, max_retries=benchmark.retry_limit)
+
+        # Aggregate results for each test and store in the database
+        test = benchmark.existing_data['tests'][-1]
+        passed = all(result['passed'] for result in test['results'])
+        total_duration = sum(result['metrics']['duration_ms'] for result in test['results'])
+        average_accuracy = sum(result['metrics']['accuracy'] for result in test['results']) / len(test['results'])
+
+        db_connector.store_benchmark_result({
+            'task_id': test['name'],
+            'test_name': test['name'],
+            'passed': passed,
+            'duration_ms': total_duration,
+            'accuracy': average_accuracy,
+            'test': test,
+            'error_message': None
+        })
+
+    db_connector.close_connection()
 
     # Save the results and metadata
     benchmark.save_to_file()
