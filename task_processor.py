@@ -9,7 +9,7 @@ from utils.command import run_command
 
 
 def flush_agents():
-    stdout, stderr, returncode = run_command(f"@2501 agents --flush")
+    run_command("@2501 agents --flush")
 
 
 def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries=3):
