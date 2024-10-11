@@ -1,0 +1,25 @@
+{
+  "reset": true,
+  "model_pairs": [
+    ["openai/gpt4o", "anthropic/claude3-opus"]
+  ],
+  "":"",
+  "available_models": [
+    "anthropic/claude3-opus",
+    "anthropic/claude3-5-sonnet",
+    "deepseek/deepseek-coder",
+    "google/gemini-1-5-pro",
+    "meta/llama3-70b-8192",
+    "meta/llama3-70b-8192-groq",
+    "meta/llama3-70b-8192-sambanova",
+    "meta/llama3-70b-cerebras",
+    "meta/llama3-1-405b-instruct-turbo",
+    "nvidia/nemotron-4-340b-reward",
+    "NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
+    "mistral/codestral-22b-instruct",
+    "mistral/codestral",
+    "openai/gpt4o",
+    "openai/gpt4o-mini",
+    "openai/o1-preview"
+  ]
+}

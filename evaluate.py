@@ -1,96 +1,67 @@
-import json
-import os
-import subprocess
-import zipfile
 import argparse
+import os
+import signal
+import sys
 
-def run_command(command):
-    """Run a shell command and return the output."""
-    env = os.environ.copy()
-    env['TERM'] = 'xterm'  # Set the TERM environment variable
-    result = subprocess.run(command, shell=True, capture_output=True, text=True, env=env)
-    return result.stdout.strip(), result.stderr.strip(), result.returncode
+from benchmark_report import BenchmarkReport
+from task_processor import process_task
+from utils.file import remove_previous_folders, extract_tests_from_jsonl
 
-def write_result(task, passed, result_jsonl_path):
-    """Write the result to the result JSONL file."""
-    task['passed'] = passed
-    with open(result_jsonl_path, 'a') as result_file:
-        result_file.write(json.dumps(task) + '\n')
 
-def main(jsonl_path):
-    result_jsonl_path = f'{jsonl_path}_result.jsonl'
-    files_dir = 'files'
+def main(jsonl_path, benchmark_config, testnum, testfrom):
+    """
+    Main function to process tasks from a JSONL file.
 
-    # Ensure the files directory exists
-    os.makedirs(files_dir, exist_ok=True)
+    Args:
+        jsonl_path (str): Path to the JSONL file containing the tasks.
+        benchmark_config (str): Path to the benchmark configuration file.
+        testnum (str): Specific test ID to run.
+        testfrom (str): Test ID to start running from.
+    """
+    dataset_dir = 'datasets'
+    remove_previous_folders(dataset_dir)
 
-    # Read the JSONL file line by line
-    with open(jsonl_path, 'r') as file:
-        for line in file:
-            # Parse the JSON line
-            try:
-                task = json.loads(line)
-                task_id = task['id']
-                input_command = task['input']
-                test_command = task['test']
-            except json.JSONDecodeError:
-                print(f"Error: Invalid JSON in line: {line}")
-                continue
-            except KeyError as e:
-                print(f"Error: Missing key in task: {e}")
-                continue
+    os.makedirs(dataset_dir, exist_ok=True)
 
-            print(f"\nProcessing task {task_id}")
+    # Load benchmark configuration
+    benchmark = BenchmarkReport("AI Model Pair Benchmark", config_file=benchmark_config)
 
-            # Unzip the corresponding zip file
-            zip_path = os.path.join(files_dir, f"{task_id}.zip")
-            if os.path.exists(zip_path):
-                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                    zip_ref.extractall(files_dir)
-                print(f"Unzipped file: {zip_path}")
+    # Load tests
+    tests = extract_tests_from_jsonl(jsonl_path)
+
+    is_test_from = False
+    for task in tests:
+        if testnum and task['id'] != testnum:
+            continue
+        if testfrom and not is_test_from:
+            if task['id'] == testfrom:
+                is_test_from = True
             else:
-                # Create the directory for the missing zip file
-                os.makedirs(f"{files_dir}/{task_id}", exist_ok=True)
-                print(f"Directory created: {files_dir}/{task_id}")
+                continue
 
-            # Execute the shell command
-            print(f"Executing command: @2501 {input_command}")
-            stdout, stderr, returncode = run_command(f"cd {files_dir}/{task_id} && @2501 agents --flush && @2501 {input_command}")
-            
-            if returncode == 0:
-                print(f"Command Output:\n{stdout}")
-            else:
-                print(f"Command failed with return code {returncode}")
-                print(f"Error output:\n{stderr}")
+        benchmark.add_test(task)
+        process_task(task, dataset_dir, benchmark, max_retries=benchmark.retry_limit)
 
-            # Run the test command
-            print(f"Running test: {test_command}")
-            try:
-                # Create a new dictionary with task-specific variables
-                test_globals = {
-                    'task_id': task_id,
-                    'input_command': input_command,
-                    'command_output': stdout,
-                    'command_error': stderr,
-                    'command_returncode': returncode
-                }
+    # Save the results and metadata
+    benchmark.save_to_file()
 
-                test_locals = {}
-                
-                # Execute the test command with the task-specific globals
-                exec(test_command, test_globals, test_locals)
-                output = test_locals['output']
-                print(f"Test {task_id} output: {output}")
 
-                # Determine if the test passed
-                passed = output.strip().upper() == "PASS"
-                write_result(task, passed, result_jsonl_path)
-            except Exception as e:
-                print(f"Test failed: {str(e)}")
-                write_result(task, False, result_jsonl_path)
+def signal_handler(sig, frame):
+    print('You pressed CTRL+C! Exiting...')
+    # Perform any necessary cleanup here
+    sys.exit(0)
+
+# Register the signal handler for SIGINT (CTRL+C)
+signal.signal(signal.SIGINT, signal_handler)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Evaluate tasks from a JSONL file.')
-    parser.add_argument('problem_file', type=str, help='Path to the JSONL file containing the tasks.', nargs='?', default='honest_benchmark.jsonl')
+    parser.add_argument('problem_file', type=str, help='Path to the JSONL file containing the tasks.', nargs='?',
+                        default='./config/honest_benchmark.jsonl')
+    parser.add_argument('--benchmark-config', type=str, help='Path to the benchmark configuration file.',
+                        default='./config/benchmark_config.json', dest='benchmark_config')
+    parser.add_argument('--test', type=str, help='Test ID to run.', default=None, dest='testnum')
+    parser.add_argument('--from', type=str, help='Test ID to run from.', default=None, dest='testfrom')
     args = parser.parse_args()
-    main(args.problem_file)
+    main(args.problem_file, args.benchmark_config, args.testnum, args.testfrom)
