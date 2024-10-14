@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
@@ -16,7 +16,7 @@ class BenchmarkReport:
         self.benchmark_name = benchmark_name
         self.retry_limit = retry_limit
         self.date = datetime.now().strftime('%Y-%m-%d')
-        self.run_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.run_at = datetime.now(timezone.utc).isoformat()
         self.timestamp_ms = datetime.now().timestamp()
 
         self.id = str(uuid.uuid4())
@@ -34,7 +34,7 @@ class BenchmarkReport:
                 "min_accuracy": 1.0
             }
         }
-        self.model_pairs = os.getenv('MODEL_PAIRS').split(':')
+        self.model_pair = [os.getenv('MAIN_ENGINE'), os.getenv('SECONDARY_ENGINE')]
         self.pre_process_model = os.getenv('PRE_PROCESS_MODEL')
         self.tests: list = []
         self.config = load_config(config_file)
@@ -50,7 +50,7 @@ class BenchmarkReport:
                 "benchmark": self.benchmark_name,
                 "date": self.date,
                 "retry_limit": self.retry_limit,
-                "model_pairs": self.model_pairs,
+                "model_pair": self.model_pair,
                 "benchmark_file": config_file,
                 "run_at": self.run_at,
                 "tests": [],
@@ -103,7 +103,7 @@ class BenchmarkReport:
                     "labels": test['tags'],
                     "input_command": input_command,
                     "pre_process_model": self.pre_process_model,
-                    "model_pair": self.model_pairs,
+                    "model_pair": self.model_pair,
                     "script": script,
                     "passed": passed,
                     "retries": retries,
