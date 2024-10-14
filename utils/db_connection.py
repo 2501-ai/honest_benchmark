@@ -38,19 +38,26 @@ class DBConnector:
         try:
             cursor = self.connection.cursor()
             query = """
-            INSERT INTO benchmark_results (task_id, test_name, passed, duration_ms, accuracy, error_message, test)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO BenchmarkResults (task_id, task_name, benchmark_id, input, labels, passed, duration_ms, pre_process_model, accuracy, run_at, benchmark_file, error_message, test)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             # Serialize JSON fields
             test_json = json.dumps(result_data['test'])
+            labels_json = json.dumps(result_data['labels'])
 
             cursor.execute(query, (
                 result_data['task_id'],
-                result_data['test_name'],
+                result_data['task_name'],
+                str(result_data['benchmark_id']),
+                result_data['input'],
                 result_data['passed'],
+                labels_json,
                 result_data['duration_ms'],
+                result_data['pre_process_model'],
                 result_data['accuracy'],
-                result_data.get('error_message'),
+                result_data['run_at'],
+                result_data['benchmark_file'],
+                result_data['error_message'],
                 test_json
             ))
             self.connection.commit()

@@ -1,6 +1,9 @@
 import json
 import os
+import uuid
 from datetime import datetime
+
+from dotenv import load_dotenv
 
 from utils.file import load_config
 
@@ -8,10 +11,15 @@ from utils.file import load_config
 class BenchmarkReport:
     existing_data: dict[str, any]
 
-    def __init__(self, benchmark_name, config_file='benchmark_config.json', retry_limit=3):
+    def __init__(self, benchmark_name, config_file='./config/benchmark_config.json', retry_limit=3):
+        load_dotenv('.env')
         self.benchmark_name = benchmark_name
         self.retry_limit = retry_limit
         self.date = datetime.now().strftime('%Y-%m-%d')
+        self.run_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.timestamp_ms = datetime.now().timestamp()
+
+        self.id = str(uuid.uuid4())
         self.summary = {
             "total_tests": 0,
             "total_results": 0,
@@ -26,10 +34,10 @@ class BenchmarkReport:
                 "min_accuracy": 1.0
             }
         }
-        self.model_pairs = []
+        self.model_pairs = os.getenv('MODEL_PAIRS').split(':')
+        self.pre_process_model = os.getenv('PRE_PROCESS_MODEL')
         self.tests: list = []
         self.config = load_config(config_file)
-        self.model_pairs = self.config.get('model_pairs', [])
         self.reset = self.config.get('reset',
                                      True)  # Reset the Benchmark results if True, else append the results for stats.
         self.output_path = f"./results/benchmark_report_{self.date}.json"
@@ -38,12 +46,13 @@ class BenchmarkReport:
             with open(self.output_path, 'r') as file:
                 self.existing_data = json.load(file)
         else:
-
             self.existing_data = {
                 "benchmark": self.benchmark_name,
                 "date": self.date,
                 "retry_limit": self.retry_limit,
-                "model_pairs": self.model_pairs[0],
+                "model_pairs": self.model_pairs,
+                "benchmark_file": config_file,
+                "run_at": self.run_at,
                 "tests": [],
                 "summary": self.summary
             }
@@ -88,8 +97,13 @@ class BenchmarkReport:
                     accuracy = 1.0 if passed else 0.0
 
                 result_entry = {
+                    "benchmark_id": self.id,
                     "task_id": task_id,
+                    "task_name": task_id,
+                    "labels": test['tags'],
                     "input_command": input_command,
+                    "pre_process_model": self.pre_process_model,
+                    "model_pair": self.model_pairs,
                     "script": script,
                     "passed": passed,
                     "retries": retries,

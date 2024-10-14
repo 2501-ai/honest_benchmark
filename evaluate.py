@@ -46,19 +46,26 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
         process_task(task, dataset_dir, benchmark, max_retries=benchmark.retry_limit)
 
         # Aggregate results for each test and store in the database
-        test = benchmark.existing_data['tests'][-1]
-        passed = all(result['passed'] for result in test['results'])
-        total_duration = sum(result['metrics']['duration_ms'] for result in test['results'])
-        average_accuracy = sum(result['metrics']['accuracy'] for result in test['results']) / len(test['results'])
+        last_test = benchmark.existing_data['tests'][-1]
+        last_result = last_test['results'][-1]
+        passed = all(result['passed'] for result in last_test['results'])
+        total_duration = sum(result['metrics']['duration_ms'] for result in last_test['results'])
+        average_accuracy = sum(result['metrics']['accuracy'] for result in last_test['results']) / len(last_test['results'])
 
         db_connector.store_benchmark_result({
-            'task_id': test['name'],
-            'test_name': test['name'],
+            'task_id': last_test['name'],
+            'task_name': last_test['name'],
+            'benchmark_id': benchmark.id,
+            'input': last_result['input_command'],
             'passed': passed,
+            'labels': last_result['labels'],
             'duration_ms': total_duration,
+            'pre_process_model': benchmark.pre_process_model,
             'accuracy': average_accuracy,
-            'test': test,
-            'error_message': None
+            'run_at': benchmark.run_at,
+            'benchmark_file': benchmark_config,
+            'test': last_test,
+            'error_message': last_result.error_message if not passed else None
         })
 
     db_connector.close_connection()
