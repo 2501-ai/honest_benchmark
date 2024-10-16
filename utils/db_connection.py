@@ -11,9 +11,9 @@ class DBConnector:
         load_dotenv(env_path)
 
         # Retrieve database connection URL from environment variables
-        self.database_url = os.getenv('DIRECT_URL')
+        self.database_url = os.getenv('DATABASE_URL')
         if not self.database_url:
-            raise ValueError("Database 'DIRECT_URL' not found in environment variables")
+            raise ValueError("Database 'DATABASE_URL' not found in environment variables")
 
         # Establish a connection to the PostgreSQL database during initialization
         self.connection = None
