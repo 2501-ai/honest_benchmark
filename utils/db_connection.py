@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 import psycopg2
 from dotenv import load_dotenv
@@ -25,7 +26,7 @@ class DBConnector:
             print("Connection to PostgreSQL DB successful")
         except Exception as e:
             print(f"Error connecting to PostgreSQL DB: {e}")
-            self.connection = None
+            sys.exit(1)
 
     def close_connection(self):
         if self.connection:
