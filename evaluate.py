@@ -51,6 +51,7 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
         passed = all(result['passed'] for result in last_test['results'])
         total_duration = sum(result['metrics']['duration_ms'] for result in last_test['results'])
         average_accuracy = sum(result['metrics']['accuracy'] for result in last_test['results']) / len(last_test['results'])
+        db_connector.connect()
         db_connector.store_benchmark_result({
             'task_id': last_test['name'],
             'task_name': last_test['name'],
@@ -67,8 +68,8 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
             'test': last_test,
             'error_message': last_result.get('error_message')
         })
+        db_connector.close_connection()
 
-    db_connector.close_connection()
 
     # Save the results and metadata
     benchmark.save_to_file()
