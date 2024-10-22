@@ -1,8 +1,5 @@
 {
   "reset": true,
-  "model_pairs": [
-    ["openai/gpt4o", "anthropic/claude3-opus"]
-  ],
   "":"",
   "available_models": [
     "anthropic/claude3-opus",

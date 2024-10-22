@@ -3,6 +3,7 @@ import signal
 import sys
 import time
 import zipfile
+import struct # Required by some subprocesses
 
 from benchmark_report import BenchmarkReport
 from utils.command import run_command

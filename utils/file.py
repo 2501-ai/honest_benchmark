@@ -34,4 +34,4 @@ def load_config(config_file):
             return json.load(file)
     except (FileNotFoundError, json.JSONDecodeError) as e:
         print(f"Error loading configuration: {e}")
-        return {"model_pairs": [], "available_models": []}
+        return {"model_pair": [], "available_models": []}
