@@ -29,6 +29,7 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
     test_command = task.get('test_command', "")
     test_script = task.get('test_script', "")
 
+    print(f"—–––––––––––––––––––––––––––––––––")
     print(f"Processing task {task_id}")
 
     # Unzip the corresponding zip file
