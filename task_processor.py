@@ -13,17 +13,18 @@ def flush_agents():
     run_command("@2501 agents --flush")
 
 
-def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries=3):
+def process_task(task, files_dir, max_retries=3):
     """
-    Process a single task and record the result in the benchmark report.
+    Process a single task and return the result.
 
     Args:
         task (dict): The task dictionary.
         files_dir (str): The directory containing the files.
-        benchmark_report (BenchmarkReport): Instance of BenchmarkReport to store results.
         max_retries (int): Maximum number of retries for the task.
+    
+    Returns:
+        dict: Result data including passed/failed status, retries, etc.
     """
-    start_time = time.time()
     task_id = task['id']
     input_command = task['input']
     test_command = task.get('test_command', "")
@@ -44,7 +45,6 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
     attempts = 0
     passed = False
     error_message = None
-    duration_ms = 0
     accuracy = 0
     prompt_limiter = "IMPORTANT: You are being benchmarked, don\\'t output prose or comments. Only provide the shortest answer possible."
 
@@ -99,23 +99,23 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
                     signal.alarm(0)
 
             print(f"Test {task_id} | Passed: {passed}")
-            # Should be improved
             accuracy = 1.0 / (attempts + 1) if passed else 0.0
             break
 
         except Exception as e:
             print(f"Test failed: {str(e)}", file=sys.stderr)
             error_message = str(e)
-            # Retry only it's a server error
             if "The server has returned an error" in str(e):
                 attempts += 1
             else:
                 break
 
-    duration_ms = int((time.time() - start_time) * 1000)
-    # Store the result in the benchmark report
-    benchmark_report.add_result(task_id, input_command, test_command or test_script, passed, attempts, duration_ms,
-                                error_message=error_message)
+    return {
+        'passed': passed,
+        'retries': attempts,
+        'accuracy': accuracy,
+        'error_message': error_message
+    }
 
 
 def signal_handler(signum, frame):

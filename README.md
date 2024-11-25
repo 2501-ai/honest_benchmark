@@ -30,6 +30,7 @@ python evaluate.py --test honest_24  # Runs a specific task by ID
 
 python evaluate.py --from honest_24  # Runs all tasks from a specific task ID
 
+python evaluate.py --parallel 4  # Run tasks in parallel using 4 processes
 ```
 
 ## JSONL File Format
