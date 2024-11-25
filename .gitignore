@@ -58,3 +58,6 @@ datasets/*
 
 # Generated result files
 *_result.jsonl
+
+# Ignore venv directory
+venv/
