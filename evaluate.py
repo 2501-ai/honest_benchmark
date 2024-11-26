@@ -63,7 +63,20 @@ def main(jsonl_path, benchmark_config, testnum, testfrom, n_jobs=1):
         # Sequential processing
         db_connector = DBConnector()
         for task in filtered_tasks:
-            process_task(task, dataset_dir, benchmark, max_retries=benchmark.retry_limit)
+            result = process_task(task, dataset_dir, max_retries=benchmark.retry_limit)
+            
+            # Add results to benchmark report if result exists
+            if result:
+                benchmark.add_result(
+                    task_id=task['id'],
+                    input_command=task['input'],
+                    script=task.get('test_command', '') or task.get('test_script', ''),
+                    passed=result.get('passed', False),
+                    retries=result.get('retries', 0),
+                    duration_ms=result.get('duration_ms', 0),
+                    accuracy=result.get('accuracy', 0),
+                    error_message=result.get('error_message')
+                )
             
             # Store results in database after each task
             last_test = benchmark.existing_data['tests'][-1]
@@ -93,10 +106,10 @@ def main(jsonl_path, benchmark_config, testnum, testfrom, n_jobs=1):
     else:
         # Parallel processing
         n_jobs = min(n_jobs, len(filtered_tasks))
-        # Don't pass benchmark to the workers
         task_args = [(task, dataset_dir, benchmark.retry_limit) 
                     for task in filtered_tasks]
         
+        # Using 'with' to ensure pool is properly closed and joined even if an error occurs
         with multiprocessing.Pool(processes=n_jobs) as pool:
             results = pool.map(process_task_wrapper, task_args)
             
