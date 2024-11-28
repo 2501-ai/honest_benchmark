@@ -35,7 +35,7 @@ class BenchmarkReport:
             }
         }
         self.model_pair = [os.getenv('MAIN_ENGINE'), os.getenv('SECONDARY_ENGINE')]
-        self.pre_process_model = os.getenv('PRE_PROCESS_MODEL')
+        self.pre_process_model = 'META_LLAMA3_70B_CEREBRAS'
         self.tests: list = []
         self.config = load_config(config_file)
         self.reset = self.config.get('reset',
