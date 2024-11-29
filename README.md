@@ -8,6 +8,30 @@ The script processes each task by unzipping corresponding files, executing comma
 - Python 3.x
 - 2501 CLI, [NPM repository here](https://www.npmjs.com/package/@2501-ai/2501-cli)
 
+## Setup
+
+On MacOS 15+, we recommend you create a virtual environment using the following commands:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Then install the required packages:
+
+```bash
+pip3 install -r requirements.txt
+``` 
+
+If the installation of `psycopg2` fails, you may need to export the following environment variables:
+
+```bash
+export LDFLAGS="-L/opt/homebrew/opt/openssl/lib"
+export CPPFLAGS="-I/opt/homebrew/opt/openssl/include"
+```
+
+This is a common problem with `psycopg2`, you may find more info [on stackoverflow](https://stackoverflow.com/a/66175899/1667822)
+
 ## Files and Directories
 
 - `evaluate.py`: The main script to process and evaluate tasks.

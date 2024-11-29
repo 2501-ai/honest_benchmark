@@ -30,6 +30,9 @@ jspm_packages/
 # dotenv environment variables file
 .env
 
+# Python vitrual env.
+.venv
+
 # Build results
 build/
 dist/
