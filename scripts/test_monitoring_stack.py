@@ -39,7 +39,7 @@ def validate_prometheus_config():
 
 def validate_docker_compose():
     try:
-        with open('./datasets/cloud_5/docker-compose.yml', 'r') as f:
+        with open('./datasets/honest_60/docker-compose.yml', 'r') as f:
             compose = yaml.safe_load(f)
             
         if 'services' not in compose:
