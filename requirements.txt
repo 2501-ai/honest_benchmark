@@ -1,2 +1,5 @@
 psycopg2
 python-dotenv
+pymongo
+pyyaml
+python-hcl2
