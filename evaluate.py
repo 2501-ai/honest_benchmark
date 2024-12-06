@@ -9,7 +9,7 @@ from utils.file import remove_previous_folders, extract_tests_from_jsonl
 from utils.db_connection import DBConnector
 
 
-def main(jsonl_path, benchmark_config, testnum, testfrom):
+def main(jsonl_path, benchmark_config, testnum, testfrom, fail_fast):
     """
     Main function to process tasks from a JSONL file.
 
@@ -18,18 +18,17 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
         benchmark_config (str): Path to the benchmark configuration file.
         testnum (str): Specific test ID to run.
         testfrom (str): Test ID to start running from.
+        fail_fast (bool): Whether to exit immediately when a test fails.
     """
     dataset_dir = 'datasets'
     remove_previous_folders(dataset_dir)
-
     os.makedirs(dataset_dir, exist_ok=True)
 
     # Load benchmark configuration
     benchmark = BenchmarkReport("AI Model Pair Benchmark", config_file=benchmark_config)
-
-    # Load tests
     tests = extract_tests_from_jsonl(jsonl_path)
-
+    
+    exit_with_failure = False
     is_test_from = False
     db_connector = DBConnector()
 
@@ -49,6 +48,8 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
         last_test = benchmark.existing_data['tests'][-1]
         last_result = last_test['results'][-1]
         passed = all(result['passed'] for result in last_test['results'])
+        
+        # Store results in database
         total_duration = sum(result['metrics']['duration_ms'] for result in last_test['results'])
         average_accuracy = sum(result['metrics']['accuracy'] for result in last_test['results']) / len(last_test['results'])
         db_connector.connect()
@@ -70,9 +71,17 @@ def main(jsonl_path, benchmark_config, testnum, testfrom):
         })
         db_connector.close_connection()
 
+        if not passed and fail_fast:
+            exit_with_failure = True
+            print(f"\nTest {task['id']} failed after {benchmark.retry_limit} retries. Exiting due to --fail-fast.")
+            print(f"Error message: {last_result.get('error_message')}")
+            break  # Exit the 
 
     # Save the results and metadata
     benchmark.save_to_file()
+    
+    if exit_with_failure: # exit with 1 only if fail-fast is enabled
+        sys.exit(1)
 
 
 def signal_handler(sig, frame):
@@ -92,5 +101,8 @@ if __name__ == "__main__":
                         default='./config/benchmark_config.json', dest='benchmark_config')
     parser.add_argument('--test', type=str, help='Test ID to run.', default=None, dest='testnum')
     parser.add_argument('--from', type=str, help='Test ID to run from.', default=None, dest='testfrom')
+    parser.add_argument('--fail-fast', action='store_true', 
+                       help='Exit immediately if a test fails after all retries', 
+                       dest='fail_fast')
     args = parser.parse_args()
-    main(args.problem_file, args.benchmark_config, args.testnum, args.testfrom)
+    main(args.problem_file, args.benchmark_config, args.testnum, args.testfrom, args.fail_fast)
