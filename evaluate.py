@@ -9,13 +9,14 @@ from utils.file import remove_previous_folders, extract_tests_from_jsonl
 from utils.db_connection import DBConnector
 
 
-def main(jsonl_path, benchmark_config, testnum, testfrom, fail_fast):
+def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fast):
     """
     Main function to process tasks from a JSONL file.
 
     Args:
         jsonl_path (str): Path to the JSONL file containing the tasks.
         benchmark_config (str): Path to the benchmark configuration file.
+        agent_config (str): Agent configuration to use.
         testnum (str): Specific test ID to run.
         testfrom (str): Test ID to start running from.
         fail_fast (bool): Whether to exit immediately when a test fails.
@@ -42,7 +43,7 @@ def main(jsonl_path, benchmark_config, testnum, testfrom, fail_fast):
                 continue
 
         benchmark.add_test(task)
-        process_task(task, dataset_dir, benchmark, max_retries=benchmark.retry_limit)
+        process_task(task, dataset_dir, benchmark, benchmark.retry_limit, agent_config)
 
         # Aggregate results for each test and store in the database
         last_test = benchmark.existing_data['tests'][-1]
@@ -101,8 +102,9 @@ if __name__ == "__main__":
                         default='./config/benchmark_config.json', dest='benchmark_config')
     parser.add_argument('--test', type=str, help='Test ID to run.', default=None, dest='testnum')
     parser.add_argument('--from', type=str, help='Test ID to run from.', default=None, dest='testfrom')
-    parser.add_argument('--fail-fast', action='store_true', 
+    parser.add_argument('--agent-config', type=str, help='Agent to run.', default='CODING_AGENT', dest='agent_config')
+    parser.add_argument('--fail-fast', action='store_true',
                        help='Exit immediately if a test fails after all retries', 
                        dest='fail_fast')
     args = parser.parse_args()
-    main(args.problem_file, args.benchmark_config, args.testnum, args.testfrom, args.fail_fast)
+    main(args.problem_file, args.benchmark_config, args.agent_config, args.testnum, args.testfrom, args.fail_fast)
