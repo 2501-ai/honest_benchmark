@@ -52,6 +52,8 @@ python evaluate.py myfile.jsonl  # Reads tasks from myfile.jsonl
 
 python evaluate.py --test honest_24  # Runs a specific task by ID
 
+python evaluate.py --agent-config CODING_AGENT # Runs all tasks from a specific agent config
+
 python evaluate.py --from honest_24  # Runs all tasks from a specific task ID
 
 ```
