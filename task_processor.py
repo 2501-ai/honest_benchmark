@@ -13,7 +13,7 @@ def flush_agents():
     run_command("@2501 agents --flush")
 
 
-def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries=3):
+def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries=3,  agent_config = 'CODING_AGENT'):
     """
     Process a single task and record the result in the benchmark report.
 
@@ -22,6 +22,7 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
         files_dir (str): The directory containing the files.
         benchmark_report (BenchmarkReport): Instance of BenchmarkReport to store results.
         max_retries (int): Maximum number of retries for the task.
+        agent_config (str): The agent configuration to use.
     """
     start_time = time.time()
     task_id = task['id']
@@ -62,7 +63,8 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
             else:
                 input_command += " " + prompt_limiter
 
-            stdout, stderr, returncode = run_command(f"cd {files_dir}/{task_id} && @2501 {input_command}")
+            stdout, stderr, returncode = run_command(
+                f"cd {files_dir}/{task_id} && @2501 init --config {agent_config} && @2501 {input_command}")
             print(f"Command returncode: {returncode} | stdout: {stdout}")
             if stderr.strip(): print(f"Command stderr: {stderr}")
 
