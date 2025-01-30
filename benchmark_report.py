@@ -15,7 +15,7 @@ class BenchmarkReport:
         load_dotenv('.env')
         self.benchmark_name = benchmark_name
         self.retry_limit = retry_limit
-        self.date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        self.date = datetime.now().strftime('%Y-%m-%d %H-%M-%S')
         self.run_at = datetime.now(timezone.utc).isoformat()
         self.timestamp_ms = datetime.now().timestamp()
 
