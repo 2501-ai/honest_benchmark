@@ -43,11 +43,11 @@ def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fas
         result_entry = process_task(task, dataset_dir, benchmark.retry_limit, agent_config)
         benchmark.add_result(result_entry)
 
-        if not passed and fail_fast:
+        if not result_entry['passed'] and fail_fast:
             exit_with_failure = True
             print(f"\nTest {task['id']} failed after {benchmark.retry_limit} retries. Exiting due to --fail-fast.")
-            print(f"Error message: {last_result.get('error_message')}")
-            break  # Exit the 
+            print(f"Error message: {result_entry.get('error_message')}")
+            break  # Stop the benchmark
 
     # Save the results and metadata
     benchmark.save_to_file()
