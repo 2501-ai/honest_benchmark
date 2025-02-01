@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
+from honest_benchmark.utils.db_connection import DBConnector
 from utils.file import load_config
 
 
@@ -104,6 +105,32 @@ class BenchmarkReport:
 
         # Update summary after adding the result
         self._update_summary()
+
+        # Aggregate results for each test and store in the database
+        passed = all(result['passed'] for result in test['results'])
+
+        # Store results in database
+        total_duration = sum(result['metrics']['duration_ms'] for result in test['results'])
+        average_accuracy = sum(result['metrics']['accuracy'] for result in test['results']) / len(test['results'])
+        db_connector = DBConnector()
+        db_connector.connect()
+        db_connector.store_benchmark_result({
+            'task_id': test['name'],
+            'task_name': test['name'],
+            'benchmark_id': self.id,
+            'input': result_entry['input_command'],
+            'passed': passed,
+            'labels': result_entry['labels'],
+            'duration_ms': total_duration,
+            'pre_process_model': self.pre_process_model,
+            'model_pair': self.model_pair,
+            'accuracy': average_accuracy,
+            'run_at': self.run_at,
+            'benchmark_file': self.config_file,
+            'test': test,
+            'error_message': result_entry.get('error_message')
+        })
+        db_connector.close_connection()
 
     def _update_summary(self):
         total_duration = 0
