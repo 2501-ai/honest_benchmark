@@ -74,9 +74,7 @@ class BenchmarkReport:
                 "results": []
             })
 
-    def add_result(self, task_id, input_command, script, passed, retries, duration_ms=0, accuracy=None,
-                   error_message=None):
-
+    def add_result(self, result_entry):
         """
         Add the result of a task to the most recent test in the report.
 
@@ -92,34 +90,17 @@ class BenchmarkReport:
         """
 
         for test in self.existing_data.get('tests', []):
-            if test['name'] == task_id:
-                # Determine accuracy if not provided
-                if accuracy is None:
-                    accuracy = 1.0 if passed else 0.0
-
-                result_entry = {
-                    "benchmark_id": self.id,
-                    "task_id": task_id,
-                    "task_name": task_id,
-                    "labels": test['tags'],
-                    "input_command": input_command,
-                    "pre_process_model": self.pre_process_model,
-                    "model_pair": self.model_pair,
-                    "script": script,
-                    "passed": passed,
-                    "retries": retries,
-                    "metrics": {
-                        "duration_ms": duration_ms,
-                        "accuracy": accuracy,
-                    },
-                    "error_message": error_message,
-                }
+            if test['name'] == result_entry['task_id']:
+                result_entry['benchmark_id'] = self.id
+                result_entry['labels'] = test['tags']
+                result_entry['pre_process_model'] = self.pre_process_model
+                result_entry['model_pair'] = self.model_pair
 
                 # Append the result to the specified test
                 test['results'].append(result_entry)
                 break
         else:
-            print(f"Test with name '{task_id}' does not exist. Add the test before adding results.")
+            raise ValueError(f"Test with name '{result_entry['task_id']}' does not exist. Add the test before adding results.")
 
         # Update summary after adding the result
         self._update_summary()
