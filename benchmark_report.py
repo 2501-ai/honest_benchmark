@@ -20,6 +20,7 @@ class BenchmarkReport:
         self.timestamp_ms = datetime.now().timestamp()
 
         self.id = str(uuid.uuid4())
+        print(f"Benchmark report id, benchmark_id={self.id}")
         self.summary = {
             "total_tests": 0,
             "total_results": 0,
@@ -180,3 +181,5 @@ class BenchmarkReport:
         with open(self.output_path, 'w') as file:
             json.dump(self.existing_data, file, indent=4)
         print(f"Benchmark report saved to {self.output_path}")
+
+        print(f"Benchmark summary:\n{json.dumps(self.summary)}")
