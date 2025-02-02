@@ -19,6 +19,7 @@ class BenchmarkReport:
         self.date = datetime.now().strftime('%Y-%m-%d')
         self.run_at = datetime.now(timezone.utc).isoformat()
         self.timestamp_ms = datetime.now().timestamp()
+        self.config_file = config_file
 
         self.id = str(uuid.uuid4())
         print(f"Benchmark report id, benchmark_id={self.id}")
