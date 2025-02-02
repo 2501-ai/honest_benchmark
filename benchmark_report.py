@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
-from honest_benchmark.utils.db_connection import DBConnector
+from utils.db_connection import DBConnector	
 from utils.file import load_config
 
 
