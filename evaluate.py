@@ -6,8 +6,6 @@ import sys
 from benchmark_report import BenchmarkReport
 from task_processor import process_task
 from utils.file import remove_previous_folders, extract_tests_from_jsonl
-from utils.db_connection import DBConnector
-
 
 def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fast):
     """
@@ -31,7 +29,6 @@ def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fas
     
     exit_with_failure = False
     is_test_from = False
-    db_connector = DBConnector()
 
     for task in tests:
         if testnum and task['id'] != testnum:
@@ -46,38 +43,11 @@ def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fas
         result_entry = process_task(task, dataset_dir, benchmark.retry_limit, agent_config)
         benchmark.add_result(result_entry)
 
-        # Aggregate results for each test and store in the database
-        last_test = benchmark.existing_data['tests'][-1]
-        last_result = last_test['results'][-1]
-        passed = all(result['passed'] for result in last_test['results'])
-        
-        # Store results in database
-        total_duration = sum(result['metrics']['duration_ms'] for result in last_test['results'])
-        average_accuracy = sum(result['metrics']['accuracy'] for result in last_test['results']) / len(last_test['results'])
-        db_connector.connect()
-        db_connector.store_benchmark_result({
-            'task_id': last_test['name'],
-            'task_name': last_test['name'],
-            'benchmark_id': benchmark.id,
-            'input': last_result['input_command'],
-            'passed': passed,
-            'labels': last_result['labels'],
-            'duration_ms': total_duration,
-            'pre_process_model': benchmark.pre_process_model,
-            'model_pair': benchmark.model_pair,
-            'accuracy': average_accuracy,
-            'run_at': benchmark.run_at,
-            'benchmark_file': benchmark_config,
-            'test': last_test,
-            'error_message': last_result.get('error_message')
-        })
-        db_connector.close_connection()
-
-        if not passed and fail_fast:
+        if not result_entry['passed'] and fail_fast:
             exit_with_failure = True
             print(f"\nTest {task['id']} failed after {benchmark.retry_limit} retries. Exiting due to --fail-fast.")
-            print(f"Error message: {last_result.get('error_message')}")
-            break  # Exit the 
+            print(f"Error message: {result_entry.get('error_message')}")
+            break  # Stop the benchmark
 
     # Save the results and metadata
     benchmark.save_to_file()
