@@ -43,7 +43,8 @@ def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fas
                 continue
 
         benchmark.add_test(task)
-        process_task(task, dataset_dir, benchmark, benchmark.retry_limit, agent_config)
+        result_entry = process_task(task, dataset_dir, benchmark.retry_limit, agent_config)
+        benchmark.add_result(result_entry)
 
         # Aggregate results for each test and store in the database
         last_test = benchmark.existing_data['tests'][-1]

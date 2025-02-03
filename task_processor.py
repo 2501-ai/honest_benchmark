@@ -13,7 +13,7 @@ def flush_agents():
     run_command("@2501 agents --flush")
 
 
-def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries=3,  agent_config = 'CODING_AGENT'):
+def process_task(task, files_dir, max_retries=3,  agent_config='CODING_AGENT'):
     """
     Process a single task and record the result in the benchmark report.
 
@@ -56,9 +56,10 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
         input_command += " " + prompt_limiter
 
     while attempts < max_retries:
+        attempts += 1
         try:
-            if attempts > 0:
-                print(f"Retrying task {task_id} (attempt {attempts + 1})")
+            if attempts > 1:
+                print(f"Retrying task {task_id} (attempt {attempts})")
             flush_agents()
             # Execute the input command
             print(f"Executing command: @2501 {input_command}")
@@ -70,7 +71,6 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
 
             if returncode != 0:
                 print(f"Command failed with return code {returncode} | Error output: {stderr}")
-                attempts += 1
                 continue
 
             test_local = locals()
@@ -101,8 +101,6 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
                     signal.alarm(0)
 
             print(f"Test {task_id} | Passed: {passed}")
-            # Should be improved
-            accuracy = 1.0 / (attempts + 1) if passed else 0.0
             break
 
         except Exception as e:
@@ -110,14 +108,30 @@ def process_task(task, files_dir, benchmark_report: BenchmarkReport, max_retries
             error_message = str(e)
             # Retry only it's a server error
             if "The server has returned an error" in str(e):
-                attempts += 1
+                continue
             else:
                 break
 
     duration_ms = int((time.time() - start_time) * 1000)
-    # Store the result in the benchmark report
-    benchmark_report.add_result(task_id, input_command, test_command or test_script, passed, attempts, duration_ms,
-                                error_message=error_message)
+    accuracy = 1.0 / attempts if passed else 0.0
+
+    if accuracy is None:
+        accuracy = 1.0 if passed else 0.0
+
+    result_entry = {
+        "task_id": task_id,
+        "task_name": task_id,
+        "input_command": input_command,
+        "script": test_command or test_script,
+        "passed": passed,
+        "retries": attempts-1,
+        "metrics": {
+            "duration_ms": duration_ms,
+            "accuracy": accuracy,
+        },
+        "error_message": error_message,
+    }
+    return result_entry
 
 
 def signal_handler(signum, frame):
