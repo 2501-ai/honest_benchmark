@@ -18,6 +18,24 @@ def process_task_wrapper(args):
     task, dataset_dir, retry_limit, agent_config = args
     return process_task(task, dataset_dir, retry_limit, agent_config)
 
+def handle_result(result_entry, benchmark, task_id=None, fail_fast=False):
+    """
+    Handle the result of a task execution.
+
+    Args:
+        result_entry (dict): The result entry from task processing
+        benchmark (BenchmarkReport): The benchmark report instance
+        task_id (str, optional): The task ID for better error reporting
+        fail_fast (bool): Whether to exit immediately when a test fails
+    """
+    benchmark.add_result(result_entry)
+    if not result_entry['passed'] and fail_fast:
+        task_info = f" {task_id}" if task_id else ""
+        print(f"\nTest{task_info} failed after {benchmark.retry_limit} retries. Exiting due to --fail-fast.")
+        print(f"Error message: {result_entry.get('error_message')}")
+        benchmark.save_to_file()
+        sys.exit(1)
+
 def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fast, parallel):
     """
     Main function to process tasks from a JSONL file.
@@ -53,39 +71,21 @@ def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fas
         filtered_tests.append(task)
         benchmark.add_test(task)
 
-    # Use parallel processing only if parallel > 1
-    if (parallel == 0 or parallel > 1) and filtered_tests:
-        # Prepare arguments for parallel processing
-        process_args = [(task, dataset_dir, benchmark.retry_limit, agent_config)
-                       for task in filtered_tests]
+    # Always use parallel processing
+    # Prepare arguments for parallel processing
+    process_args = [(task, dataset_dir, benchmark.retry_limit, agent_config)
+                    for task in filtered_tests]
 
-        # Use specified number of workers or CPU count if parallel is 0
-        num_processes = parallel or cpu_count()
-        # Cap number of processes at number of tests
-        num_processes = min(num_processes, len(filtered_tests))
-        print(f"Running {num_processes} processes in parallel")
+    # Use specified number of workers or CPU count if parallel is 0
+    num_processes = parallel or cpu_count()
+    # Cap number of processes at number of tests
+    num_processes = min(num_processes, len(filtered_tests))
+    print(f"Running {num_processes} processes in parallel")
 
-        with Pool(num_processes) as pool:
-            # Use imap_unordered for non-blocking iteration over results
-            for result_entry in pool.imap_unordered(process_task_wrapper, process_args):
-                benchmark.add_result(result_entry)
-                if not result_entry['passed'] and fail_fast:
-                    print(f"\nTest failed after {benchmark.retry_limit} retries. Exiting due to --fail-fast.")
-                    print(f"Error message: {result_entry.get('error_message')}")
-                    benchmark.save_to_file()
-                    sys.exit(1)
-    else:
-        # Sequential processing
-        print("Running in sequential mode")
-        for task in filtered_tests:
-            result_entry = process_task(task, dataset_dir, benchmark.retry_limit, agent_config)
-            benchmark.add_result(result_entry)
-
-            if not result_entry['passed'] and fail_fast:
-                print(f"\nTest {task['id']} failed after {benchmark.retry_limit} retries. Exiting due to --fail-fast.")
-                print(f"Error message: {result_entry.get('error_message')}")
-                benchmark.save_to_file()
-                sys.exit(1)
+    with Pool(num_processes) as pool:
+        # Use imap_unordered for non-blocking iteration over results
+        for result_entry in pool.imap_unordered(process_task_wrapper, process_args):
+            handle_result(result_entry, benchmark, fail_fast=fail_fast)
 
     # Save the results and metadata
     benchmark.save_to_file()
@@ -113,7 +113,7 @@ if __name__ == "__main__":
                        help='Exit immediately if a test fails after all retries',
                        dest='fail_fast')
     parser.add_argument('--parallel', type=int, default=0,
-                       help='Number of parallel workers. 0=use CPU count (default), 1=sequential, N=N workers)',
+                       help='Number of parallel workers. 0=use CPU count (default), N=N workers)',
                        dest='parallel')
     args = parser.parse_args()
 
