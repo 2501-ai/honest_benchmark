@@ -21,7 +21,13 @@ Then install the required packages:
 
 ```bash
 pip3 install -r requirements.txt
-``` 
+```
+
+If you faced error `Error: pg_config executable not found.`, install postgresql:
+
+```bash
+brew install postgresql
+```
 
 If the installation of `psycopg2` fails, you may need to export the following environment variables:
 
