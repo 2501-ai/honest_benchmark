@@ -4,13 +4,27 @@ import sys
 import time
 import zipfile
 import struct # Required by some subprocesses
+import subprocess
 
-from benchmark_report import BenchmarkReport
 from utils.command import run_command
 
 
 def flush_agents():
     run_command("@2501 agents --flush")
+
+
+def get_cli_version():
+    """Get the CLI version by running the CLI version command."""
+    result = subprocess.run(['@2501', '--version'],
+                            capture_output=True, text=True, check=True)
+    return result.stdout.strip()
+
+
+def get_engine_version():
+    """Get the engine version by running the engine version command."""
+    result = subprocess.run(['@2501', 'engine-version'],
+                            capture_output=True, text=True, check=True)
+    return result.stdout.strip()
 
 
 def process_task(task, files_dir, max_retries=3,  agent_config='CODING_AGENT'):
@@ -20,7 +34,6 @@ def process_task(task, files_dir, max_retries=3,  agent_config='CODING_AGENT'):
     Args:
         task (dict): The task dictionary.
         files_dir (str): The directory containing the files.
-        benchmark_report (BenchmarkReport): Instance of BenchmarkReport to store results.
         max_retries (int): Maximum number of retries for the task.
         agent_config (str): The agent configuration to use.
     """

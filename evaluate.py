@@ -36,7 +36,7 @@ def handle_result(result_entry, benchmark, task_id=None, fail_fast=False):
         benchmark.save_to_file()
         sys.exit(1)
 
-def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fast, parallel):
+def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fast, parallel, description):
     """
     Main function to process tasks from a JSONL file.
 
@@ -48,13 +48,14 @@ def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fas
         testfrom (str): Test ID to start running from.
         fail_fast (bool): Whether to exit immediately when a test fails.
         parallel (int): Number of parallel workers (0 means use CPU count, 1 means sequential).
+        description (str): Optional description of the benchmark run.
     """
     dataset_dir = 'datasets'
     remove_previous_folders(dataset_dir)
     os.makedirs(dataset_dir, exist_ok=True)
 
     # Load benchmark configuration
-    benchmark = BenchmarkReport("AI Model Pair Benchmark", config_file=benchmark_config)
+    benchmark = BenchmarkReport("AI Model Pair Benchmark", config_file=benchmark_config, description=description)
     tests = extract_tests_from_jsonl(jsonl_path)
 
     # Filter tests based on testnum and testfrom
@@ -115,6 +116,9 @@ if __name__ == "__main__":
     parser.add_argument('--parallel', type=int, default=0,
                        help='Number of parallel workers. 0=use CPU count (default), N=N workers)',
                        dest='parallel')
+    parser.add_argument('--description', type=str, default=None,
+                       help='Optional description of the benchmark run',
+                       dest='description')
     args = parser.parse_args()
 
     # Print all arguments
@@ -124,4 +128,4 @@ if __name__ == "__main__":
     print()
 
     main(args.problem_file, args.benchmark_config, args.agent_config,
-         args.testnum, args.testfrom, args.fail_fast, args.parallel)
+         args.testnum, args.testfrom, args.fail_fast, args.parallel, args.description)
