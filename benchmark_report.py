@@ -7,12 +7,13 @@ from dotenv import load_dotenv
 
 from utils.db_connection import DBConnector	
 from utils.file import load_config
-
+from utils.git_utils import get_git_branch, get_git_hash, get_local_changes
+from task_processor import get_cli_version, get_engine_version
 
 class BenchmarkReport:
     existing_data: dict[str, any]
 
-    def __init__(self, benchmark_name, config_file='./config/benchmark_config.json', retry_limit=3):
+    def __init__(self, benchmark_name, config_file='./config/benchmark_config.json', retry_limit=3, description=None):
         load_dotenv('.env')
         self.benchmark_name = benchmark_name
         self.retry_limit = retry_limit
@@ -20,6 +21,18 @@ class BenchmarkReport:
         self.run_at = datetime.now(timezone.utc).isoformat()
         self.timestamp_ms = datetime.now().timestamp()
         self.config_file = config_file
+        self.description = description
+
+        # Extra information about the benchmark
+        self.extra_info = {
+            "description": self.description,
+            "benchmark_branch": get_git_branch(),
+            "benchmark_hash": get_git_hash(),
+            "benchmark_local_changes": get_local_changes(),
+            "cli_version": get_cli_version(),
+            # "engine_version": get_engine_version(),
+        }
+        print(f"Benchmark extra_info:\n{json.dumps(self.extra_info, indent=4)}")
 
         self.id = str(uuid.uuid4())
         print(f"Benchmark report id, benchmark_id={self.id}")
@@ -73,7 +86,8 @@ class BenchmarkReport:
             self.existing_data['tests'].append({
                 "name": task['id'],
                 "tags": task['tags'],
-                "results": []
+                "results": [],
+                "extra_info": self.extra_info,
             })
 
     def add_result(self, result_entry):
