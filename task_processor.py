@@ -79,7 +79,7 @@ def process_task(task, files_dir, max_retries=3,  agent_config='CODING_AGENT'):
             print(f"Executing command: @2501 {input_command}")
 
             stdout, stderr, returncode = run_command(
-                f"cd {files_dir}/{task_id} && @2501 init --config {agent_config} && @2501 {input_command}")
+                f"cd {files_dir}/{task_id} && @2501 init --config {agent_config} && @2501 \"{input_command}\"")
             print(f"Command returncode: {returncode} | stdout: {stdout}")
             if stderr.strip(): print(f"Command stderr: {stderr}")
 
