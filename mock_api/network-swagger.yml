@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: Cloud Provider Network API
+  version: 1.0.0
+paths:
+  /networks:
+    get:
+      summary: List networks
+      parameters:
+        - name: ownerUserId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Networks listed
+    post:
+      summary: Create network
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, cidrBlock, ownerUserId]
+              properties:
+                name:
+                  type: string
+                cidrBlock:
+                  type: string
+                ownerUserId:
+                  type: string
+      responses:
+        '201':
+          description: Network created
+
+  /networks/{networkId}:
+    get:
+      summary: Get network details
+      parameters:
+        - name: networkId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Network details retrieved
+    put:
+      summary: Update network
+      parameters:
+        - name: networkId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Network updated
+    delete:
+      summary: Delete network
+      parameters:
+        - name: networkId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Network deleted
+
+  /networks/{networkId}/subnets:
+    post:
+      summary: Add subnet
+      parameters:
+        - name: networkId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subnetCidr]
+              properties:
+                subnetCidr:
+                  type: string
+      responses:
+        '201':
+          description: Subnet added
+
+  /networks/{networkId}/subnets/{subnetId}:
+    delete:
+      summary: Delete subnet
+      parameters:
+        - name: networkId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: subnetId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subnet deleted
+
+  /networks/{networkId}/peering:
+    post:
+      summary: Establish peering
+      parameters:
+        - name: networkId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [peerNetworkId]
+              properties:
+                peerNetworkId:
+                  type: string
+      responses:
+        '201':
+          description: Peering initiated
+
+  /networks/{networkId}/peering/{peerNetworkId}:
+    delete:
+      summary: Delete peering
+      parameters:
+        - name: networkId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: peerNetworkId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Peering deleted
