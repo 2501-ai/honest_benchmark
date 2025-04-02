@@ -1,5 +1,6 @@
 {"id": "honest_v2_1", "input": "move all terraform state files from terraform/states to terraform/archive and compress them", "tags": ["terraform", "filesystem", "compression", "infrastructure"]}
 {"id": "honest_v2_2", "input": "update the VM instance type in main.tf from t2.micro to t3.medium and add auto-scaling group", "tags": ["terraform", "aws", "ec2", "autoscaling", "infrastructure"]}
 {"id": "honest_v2_3", "input": "use the aws plugin to analyze EC2 costs and update instance types in terraform", "tags": ["aws", "terraform", "plugins", "cost-optimization"]}
-{"id": "honest_v2_4", "input": "analyze docker-compose.yml and create a summary of resource limits in resource_summary.md", "tags": ["docker", "container", "rag", "infrastructure"]}
+{"id": "honest_v2_4", "input": "analyze the provided swagger.yaml for the custom API and create a summary of available endpoints and their authentication requirements in api_summary.md", "tags": ["api", "swagger", "rag", "documentation"]}
 {"id": "honest_v2_5", "input": "monitor the terraform apply for 5 minutes and rollback if deployment fails", "tags": ["terraform", "deployment", "rollback", "infrastructure"]}
+// {"id": "honest_v2_6", "input": "--query --plugins ./plugins 'test'", "tags": ["nginx", "configuration", "performance", "devops"]}
