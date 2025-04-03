@@ -1,0 +1,1179 @@
+openapi: 3.0.3
+info:
+  title: Fake E-Commerce API
+  description: A long, pretend API specification that simulates a real-life E-commerce platform.
+  version: 1.0.0
+  contact:
+    name: FakeCorp Support
+    email: support@fakecorp.example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.fakecorp.example.com/v1
+    description: Primary production server
+  - url: https://staging.fakecorp.example.com/v1
+    description: Staging server
+
+tags:
+  - name: Users
+    description: Operations about users
+  - name: Products
+    description: Product management and browsing
+  - name: Categories
+    description: Category management
+  - name: Cart
+    description: Cart and checkout
+  - name: Orders
+    description: Order management
+  - name: Auth
+    description: Authentication and security
+
+paths:
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: User login
+      description: Allows a user to log in with an email and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: User logout
+      description: Logs out the currently authenticated user and invalidates the session/token.
+      responses:
+        '204':
+          description: User logged out successfully
+        '401':
+          description: Unauthorized
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Get all users
+      description: Returns a list of all registered users.
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+          description: Number of users per page
+      responses:
+        '200':
+          description: A list of users
+          headers:
+            X-Total-Count:
+              description: The total number of users
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+
+    post:
+      tags:
+        - Users
+      summary: Create a new user
+      description: Registers a new user in the system.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+      responses:
+        '201':
+          description: The user was created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request (invalid data)
+
+  /users/{userId}:
+    get:
+      tags:
+        - Users
+      summary: Get a specific user
+      description: Returns details of a user by ID.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the user to retrieve.
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+    put:
+      tags:
+        - Users
+      summary: Update a user
+      description: Updates user information by ID.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the user to update.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: The user was updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request (invalid data)
+        '404':
+          description: User not found
+
+    delete:
+      tags:
+        - Users
+      summary: Delete a user
+      description: Removes the user by ID.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the user to delete.
+      responses:
+        '204':
+          description: User deleted successfully
+        '404':
+          description: User not found
+
+  /users/{userId}/addresses:
+    get:
+      tags:
+        - Users
+      summary: List user addresses
+      description: Returns a list of addresses for a specific user.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the user
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of addresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+        '404':
+          description: User not found
+
+    post:
+      tags:
+        - Users
+      summary: Create a new address for a user
+      description: Adds a new address to the specified user's address list.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ID of the user
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewAddress'
+      responses:
+        '201':
+          description: Address created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '404':
+          description: User not found
+
+  /users/{userId}/addresses/{addressId}:
+    get:
+      tags:
+        - Users
+      summary: Get a specific address for a user
+      description: Returns details of a user's address.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The address details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '404':
+          description: Address not found
+
+    put:
+      tags:
+        - Users
+      summary: Update a user's address
+      description: Updates a specific address for a user.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAddress'
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '404':
+          description: Address not found
+
+    delete:
+      tags:
+        - Users
+      summary: Delete a user's address
+      description: Removes an address from the user's address list.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: addressId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Address deleted
+        '404':
+          description: Address not found
+
+  /products:
+    get:
+      tags:
+        - Products
+      summary: List products
+      description: Returns a list of products, optionally filtered by category, sorted, and paginated.
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Filter products by category ID
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search keyword for product name or description
+        - in: query
+          name: sort
+          schema:
+            type: string
+          description: Sort by a specific field (e.g., `price`, `name`)
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            default: 20
+          description: Number of products per page
+      responses:
+        '200':
+          description: A list of products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '401':
+          description: Unauthorized
+
+    post:
+      tags:
+        - Products
+      summary: Create a new product
+      description: Adds a new product to the product catalog.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewProduct'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Bad request (invalid data)
+
+  /products/{productId}:
+    get:
+      tags:
+        - Products
+      summary: Get product details
+      description: Returns detailed information about a product.
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The ID of the product to retrieve
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+
+    put:
+      tags:
+        - Products
+      summary: Update product
+      description: Updates the information of a specific product by ID.
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProduct'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Bad request (invalid data)
+        '404':
+          description: Product not found
+
+    delete:
+      tags:
+        - Products
+      summary: Delete product
+      description: Removes a product from the catalog by ID.
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Product deleted successfully
+        '404':
+          description: Product not found
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: List categories
+      description: Returns a list of all product categories.
+      responses:
+        '200':
+          description: A list of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+    post:
+      tags:
+        - Categories
+      summary: Create a new category
+      description: Adds a new category to the store.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewCategory'
+      responses:
+        '201':
+          description: Category created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Invalid request data
+
+  /categories/{categoryId}:
+    get:
+      tags:
+        - Categories
+      summary: Get category details
+      description: Retrieves details of a specific category by ID.
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Category found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          description: Category not found
+
+    put:
+      tags:
+        - Categories
+      summary: Update a category
+      description: Updates the name or description of a category.
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategory'
+      responses:
+        '200':
+          description: Category updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Invalid data
+        '404':
+          description: Category not found
+
+    delete:
+      tags:
+        - Categories
+      summary: Delete category
+      description: Removes a category by ID.
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Category deleted
+        '404':
+          description: Category not found
+
+  /cart:
+    get:
+      tags:
+        - Cart
+      summary: Get current cart
+      description: Retrieves the current cart for the authenticated user.
+      responses:
+        '200':
+          description: The current cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '401':
+          description: Unauthorized
+
+  /cart/items:
+    post:
+      tags:
+        - Cart
+      summary: Add item to cart
+      description: Adds a product to the current user's cart.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCartItem'
+      responses:
+        '200':
+          description: Item added to cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+
+  /cart/items/{itemId}:
+    put:
+      tags:
+        - Cart
+      summary: Update a cart item
+      description: Updates the quantity or attributes of an existing cart item.
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItem'
+      responses:
+        '200':
+          description: Cart item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '404':
+          description: Cart item not found
+        '401':
+          description: Unauthorized
+
+    delete:
+      tags:
+        - Cart
+      summary: Remove item from cart
+      description: Removes an item from the current user's cart.
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item removed from cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '404':
+          description: Cart item not found
+        '401':
+          description: Unauthorized
+
+  /cart/checkout:
+    post:
+      tags:
+        - Cart
+      summary: Checkout the cart
+      description: Initiates the checkout process and creates an order from the user's cart.
+      requestBody:
+        required: true
+        description: Payment and shipping information
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: Invalid checkout details
+        '401':
+          description: Unauthorized
+
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: List user orders
+      description: Retrieves a list of orders for the currently authenticated user.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of orders per page
+      responses:
+        '200':
+          description: A list of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthorized
+
+  /orders/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: Get order details
+      description: Returns the details of a single order for the authenticated user.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Order not found
+
+    put:
+      tags:
+        - Orders
+      summary: Update order status
+      description: Updates the status of an existing order (for admin or system use).
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderStatus'
+      responses:
+        '200':
+          description: Order updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Order not found
+
+    delete:
+      tags:
+        - Orders
+      summary: Cancel order
+      description: Cancels an order if it's still in a cancellable state.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Order cancelled
+        '401':
+          description: Unauthorized
+        '404':
+          description: Order not found
+        '409':
+          description: Cannot cancel the order in its current state
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    # Authentication
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: john.doe@example.com
+        password:
+          type: string
+          format: password
+          example: MyStr0ngPass!
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token for authenticated requests
+
+    # Users
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "user_123"
+        email:
+          type: string
+          format: email
+          example: "jane.doe@example.com"
+        firstName:
+          type: string
+          example: "Jane"
+        lastName:
+          type: string
+          example: "Doe"
+        phone:
+          type: string
+          example: "+1-202-555-0147"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NewUser:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+
+    UpdateUser:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+
+    # Addresses
+    Address:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "addr_456"
+        userId:
+          type: string
+          example: "user_123"
+        line1:
+          type: string
+        line2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+        isPrimary:
+          type: boolean
+
+    NewAddress:
+      type: object
+      properties:
+        line1:
+          type: string
+        line2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+        isPrimary:
+          type: boolean
+      required:
+        - line1
+        - city
+        - state
+        - zip
+        - country
+
+    UpdateAddress:
+      type: object
+      properties:
+        line1:
+          type: string
+        line2:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        zip:
+          type: string
+        country:
+          type: string
+        isPrimary:
+          type: boolean
+
+    # Products
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "prod_789"
+        name:
+          type: string
+          example: "Fake Product"
+        description:
+          type: string
+          example: "A very useful fake product"
+        price:
+          type: number
+          format: float
+          example: 19.99
+        currency:
+          type: string
+          example: "USD"
+        categoryId:
+          type: string
+          example: "cat_001"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    NewProduct:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+        currency:
+          type: string
+        categoryId:
+          type: string
+      required:
+        - name
+        - description
+        - price
+        - currency
+        - categoryId
+
+    UpdateProduct:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+        currency:
+          type: string
+        categoryId:
+          type: string
+
+    # Categories
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "cat_001"
+        name:
+          type: string
+          example: "Electronics"
+        description:
+          type: string
+          example: "Gadgets, devices, and more"
+        parentId:
+          type: string
+          example: "cat_root"
+
+    NewCategory:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        parentId:
+          type: string
+      required:
+        - name
+
+    UpdateCategory:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        parentId:
+          type: string
+
+    # Cart and Checkout
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "ci_001"
+        productId:
+          type: string
+          example: "prod_789"
+        quantity:
+          type: integer
+          example: 2
+        price:
+          type: number
+          format: float
+          example: 19.99
+
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "cart_abc123"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        totalQuantity:
+          type: integer
+          example: 3
+        totalPrice:
+          type: number
+          format: float
+          example: 59.97
+
+    AddCartItem:
+      type: object
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          default: 1
+      required:
+        - productId
+
+    UpdateCartItem:
+      type: object
+      properties:
+        quantity:
+          type: integer
+        price:
+          type: number
+          format: float
+
+    CheckoutRequest:
+      type: object
+      properties:
+        paymentMethodId:
+          type: string
+          example: "pm_456"
+        shippingAddressId:
+          type: string
+          example: "addr_456"
+      required:
+        - paymentMethodId
+        - shippingAddressId
+
+    # Orders
+    OrderItem:
+      type: object
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+        price:
+          type: number
+          format: float
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "order_789"
+        userId:
+          type: string
+          example: "user_123"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        status:
+          type: string
+          example: "pending"
+        totalAmount:
+          type: number
+          format: float
+          example: 59.97
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateOrderStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - processing
+            - completed
+            - cancelled
+      required:
+        - status
+
+security:
+  - BearerAuth: []

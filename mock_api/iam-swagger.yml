@@ -1,0 +1,173 @@
+openapi: 3.0.3
+info:
+  title: Mock Cloud IAM API
+  version: 1.0.0
+servers:
+  - url: https://api.mockcloud.com/v1
+paths:
+  /iam/users:
+    get:
+      summary: List IAM users
+      responses:
+        '200':
+          description: Successful retrieval
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      summary: Create a new IAM user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                roles:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - username
+                - email
+                - roles
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /iam/users/{userId}:
+    delete:
+      summary: Delete an IAM user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  deleted:
+                    type: boolean
+  /iam/users/{userId}/permissions:
+    get:
+      summary: Get user permissions
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful retrieval
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  permissions:
+                    type: array
+                    items:
+                      type: string
+    put:
+      summary: Update user permissions
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permissions:
+                  type: array
+                  items:
+                    type: string
+              required:
+                - permissions
+      responses:
+        '200':
+          description: Permissions updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  permissions:
+                    type: array
+                    items:
+                      type: string
+  /iam/users/{userId}/rotate-credentials:
+    post:
+      summary: Rotate credentials for user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credentials rotated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  newAccessKey:
+                    type: string
+                  secret:
+                    type: string
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        roles:
+          type: array
+          items:
+            type: string
+      required:
+        - userId
+        - username
+        - email
+        - createdAt
+        - roles

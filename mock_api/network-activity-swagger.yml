@@ -1,0 +1,127 @@
+openapi: 3.0.0
+info:
+  title: Network Activity API
+  description: API for managing and analyzing network activity events.
+  version: 1.0.0
+servers:
+  - url: https://api.mockcloudprovider.com/v1
+
+paths:
+  /network-activity:
+    get:
+      summary: Retrieve recent network activity logs
+      parameters:
+        - name: vmId
+          in: query
+          schema:
+            type: string
+        - name: networkId
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+        - name: fromTimestamp
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: toTimestamp
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: List of network activity events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NetworkActivitySummary'
+
+  /network-activity/{activityId}:
+    get:
+      summary: Retrieve detailed information on a specific network activity
+      parameters:
+        - name: activityId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detailed network activity information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkActivityDetails'
+
+  /network-activity/{activityId}/analyze:
+    post:
+      summary: Trigger advanced analysis on a network activity event
+      parameters:
+        - name: activityId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                analysisType:
+                  type: string
+                  enum: ["security", "performance"]
+                  example: security
+      responses:
+        '202':
+          description: Analysis triggered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysisId:
+                    type: string
+                  status:
+                    type: string
+                    example: queued
+
+components:
+  schemas:
+    NetworkActivitySummary:
+      type: object
+      properties:
+        activityId:
+          type: string
+        vmId:
+          type: string
+        networkId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        activityType:
+          type: string
+        summary:
+          type: string
+
+    NetworkActivityDetails:
+      allOf:
+        - $ref: '#/components/schemas/NetworkActivitySummary'
+        - type: object
+          properties:
+            details:
+              type: object
+              additionalProperties: true

@@ -46,6 +46,7 @@ def process_task(task, files_dir, max_retries=3,  agent_config='CODING_AGENT'):
     print(f"Processing task {task_id}")
 
     # Unzip the corresponding zip file
+    print(f"Unzipping file: {files_dir}/{task_id}.zip")
     zip_path = os.path.join(files_dir, f"{task_id}.zip")
     if os.path.exists(zip_path):
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -76,10 +77,20 @@ def process_task(task, files_dir, max_retries=3,  agent_config='CODING_AGENT'):
                 print(f"Retrying task {task_id} (attempt {attempts})")
             flush_agents()
             # Execute the input command
-            print(f"Executing command: @2501 \"{input_command}\"")
+            command = input_command
+            if "command_type" in task and task["command_type"] == "query":
+                # For query commands, don't use quotes
+                print(f"Executing command: @2501 {command}")
+                print(f"Running command: cd {files_dir}/{task_id} && @2501 init --config {agent_config} && @2501 {command}")
+                stdout, stderr, returncode = run_command(
+                    f"cd {files_dir}/{task_id} && @2501 init --config {agent_config} && @2501 {command}")
+            else:
+                # For legacy commands, use quotes
+                print(f"Executing command: @2501 \"{command}\"")
+                print(f"Running command: cd {files_dir}/{task_id} && @2501 init --config {agent_config} && @2501 \"{command}\"")
+                stdout, stderr, returncode = run_command(
+                    f"cd {files_dir}/{task_id} && @2501 init --config {agent_config} && @2501 \"{command}\"")
 
-            stdout, stderr, returncode = run_command(
-                f"cd {files_dir}/{task_id} && @2501 init --config {agent_config} && @2501 \"{input_command}\"")
             print(f"Command returncode: {returncode} | stdout: {stdout}")
             if stderr.strip(): print(f"Command stderr: {stderr}")
 
