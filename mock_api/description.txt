@@ -1,0 +1,22 @@
+The swagger was generated with GPT 4.5
+
+Prompt 1:
+to be able to test 2501 in integration tests I would like to generate a mock API for imaginary Cloud Provider REST api. This api allows to manipulate the following entities:
+Backups, Network Activity, IAM, Virtual Machines, Network, Storage
+
+Let's start by defining different potential rest apis for them. Return them in the format:
+EntityName
+METHOD /url description
+METHOD /url description
+METHOD /url description
+
+No need to specify input and output so far. Be creative, use your knowledge of popular and obscure cloud provider APIs. Make sure all fo this add up together ince entities are connected
+
+Prompt: 2
+Nice, now expand it with input and output params. Remember - entities are connected. Like in many places you'll need to pass userId and so on
+
+Prompt 3:
+Review that it makes sense and that connections between entities make sense. Make adjustment where needed
+
+Prompt 4:
+Generate me a swagger file for ENTITY NAME (one by one to avoid gallucionations)

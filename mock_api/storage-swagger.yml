@@ -1,0 +1,117 @@
+openapi: 3.0.0
+info:
+  title: Cloud Provider Storage API
+  version: '1.0'
+paths:
+  /storage/buckets:
+    get:
+      summary: List storage buckets
+      parameters:
+        - name: ownerUserId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of storage buckets
+    post:
+      summary: Create a storage bucket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                region:
+                  type: string
+                ownerUserId:
+                  type: string
+              required:
+                - name
+                - region
+                - ownerUserId
+      responses:
+        '201':
+          description: Bucket created
+  /storage/buckets/{bucketId}:
+    get:
+      summary: Get details of a storage bucket
+      parameters:
+        - name: bucketId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Storage bucket details
+    delete:
+      summary: Delete a storage bucket
+      parameters:
+        - name: bucketId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bucket deleted
+  /storage/buckets/{bucketId}/objects:
+    get:
+      summary: List objects in a bucket
+      parameters:
+        - name: bucketId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of objects
+    post:
+      summary: Upload an object to bucket
+      parameters:
+        - name: bucketId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                fileName:
+                  type: string
+                fileData:
+                  type: string
+                  format: binary
+              required:
+                - fileName
+                - fileData
+      responses:
+        '201':
+          description: Object uploaded
+  /storage/buckets/{bucketId}/objects/{objectId}:
+    delete:
+      summary: Delete an object from bucket
+      parameters:
+        - name: bucketId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: objectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object deleted

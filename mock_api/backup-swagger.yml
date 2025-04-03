@@ -1,0 +1,142 @@
+openapi: 3.0.3
+info:
+  title: "Cloud Provider Backups API"
+  version: "1.0.0"
+paths:
+  /backups:
+    get:
+      summary: "List backups"
+      parameters:
+        - name: vmId
+          in: query
+          description: "Filter backups by VM ID"
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Successful response"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Backup"
+
+    post:
+      summary: "Create a backup"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vmId:
+                  type: string
+                description:
+                  type: string
+              required: [vmId, description]
+      responses:
+        '201':
+          description: "Backup creation initiated"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackupCreationResponse"
+
+  /backups/{backupId}:
+    get:
+      summary: "Retrieve backup details"
+      parameters:
+        - name: backupId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Backup details"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Backup"
+
+    delete:
+      summary: "Delete a backup"
+      parameters:
+        - name: backupId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Backup deleted"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backupId:
+                    type: string
+                  deleted:
+                    type: boolean
+
+  /backups/{backupId}/restore:
+    post:
+      summary: "Restore a backup to VM"
+      parameters:
+        - name: backupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                targetVmId:
+                  type: string
+              required: [targetVmId]
+      responses:
+        '202':
+          description: "Backup restore initiated"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  restoreOperationId:
+                    type: string
+                  status:
+                    type: string
+
+components:
+  schemas:
+    Backup:
+      type: object
+      properties:
+        backupId:
+          type: string
+        vmId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        sizeGb:
+          type: number
+        status:
+          type: string
+        description:
+          type: string
+
+    BackupCreationResponse:
+      type: object
+      properties:
+        backupId:
+          type: string
+        status:
+          type: string
