@@ -1,0 +1,143 @@
+openapi: 3.0.3
+info:
+  title: Cloud Provider - Virtual Machines API
+  description: API for managing Virtual Machines.
+  version: 1.0.0
+
+servers:
+  - url: https://api.cloudprovider.com/v1
+
+paths:
+  /vms:
+    get:
+      summary: List all Virtual Machines
+      parameters:
+        - name: ownerUserId
+          in: query
+          schema:
+            type: string
+          required: false
+          description: Filter VMs by owner IAM user ID
+      responses:
+        '200':
+          description: A list of VMs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VirtualMachine'
+
+    post:
+      summary: Provision a new Virtual Machine
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - imageId
+                - vmSize
+                - networkId
+                - ownerUserId
+              properties:
+                name:
+                  type: string
+                imageId:
+                  type: string
+                vmSize:
+                  type: string
+                networkId:
+                  type: string
+                storageBucketId:
+                  type: string
+                ownerUserId:
+                  type: string
+      responses:
+        '201':
+          description: VM successfully provisioned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vmId:
+                    type: string
+                  status:
+                    type: string
+
+  /vms/{vmId}:
+    get:
+      summary: Get details of a Virtual Machine
+      parameters:
+        - name: vmId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: VM details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VirtualMachine'
+
+    put:
+      summary: Update a Virtual Machine configuration
+      parameters:
+        - name: vmId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vmSize:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '200':
+          description: VM updated successfully
+
+    delete:
+      summary: Terminate a Virtual Machine
+      parameters:
+        - name: vmId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: VM terminated successfully
+
+components:
+  schemas:
+    VirtualMachine:
+      type: object
+      properties:
+        vmId:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        networkId:
+          type: string
+        ipAddress:
+          type: string
+        storageBucketId:
+          type: string
+        ownerUserId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
