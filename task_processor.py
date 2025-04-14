@@ -5,8 +5,13 @@ import time
 import zipfile
 import struct  # Required by some subprocesses
 import subprocess
+import logging
 
 from utils.command import run_command
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 def flush_agents():
@@ -45,14 +50,14 @@ def process_task(task, files_dir, max_retries=3, agent_config="CODING_AGENT"):
     test_command = task.get("test_command", "")
     test_script = task.get("test_script", "")
 
-    print(f"Processing task {task_id}")
+    logging.info(f"Processing task {task_id}")
 
     # Unzip the corresponding zip file
     zip_path = os.path.join(files_dir, f"{task_id}.zip")
     if os.path.exists(zip_path):
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(files_dir)
-        print(f"Unzipped file: {zip_path}")
+        logging.info(f"Unzipped file: {zip_path}")
     else:
         # If the zip file does not exist, create the dir
         os.makedirs(os.path.join(files_dir, task_id), exist_ok=True)
@@ -76,22 +81,22 @@ def process_task(task, files_dir, max_retries=3, agent_config="CODING_AGENT"):
         agent_stdout = None  # Initialize agent_stdout
         try:
             if attempts > 1:
-                print(f"Retrying task {task_id} (attempt {attempts})")
+                logging.warning(f"Retrying task {task_id} (attempt {attempts})")
             flush_agents()
 
             # Execute the input command
-            print(f'Executing command: @2501 "{input_command}"')
-            command_to_run = f'cd {files_dir}/{task_id} && @2501 init --config {agent_config} && @2501 "{input_command}"'
-            print(f"Executing command: {command_to_run}")
+            logging.info(f'Executing command: @2501 "{input_command}"')
+            command_to_run = f'cd {files_dir}/{task_id} && @2501 init --config {agent_config} && TFZO_DISABLE_SPINNER=true @2501 "{input_command}"'
+            logging.info(f"Executing command: {command_to_run}")
 
             # Capture stdout from the agent command
             agent_stdout, stderr, returncode = run_command(command_to_run)
-            print(f"Command returncode: {returncode} | stdout: {agent_stdout}")
+            logging.info(f"Command returncode: {returncode} | stdout: {agent_stdout}")
             if stderr.strip():
-                print(f"Command stderr: {stderr}")
+                logging.error(f"Command stderr: {stderr}")
 
             if returncode != 0:
-                print(
+                logging.error(
                     f"Command failed with return code {returncode} | Error output: {stderr}"
                 )
                 continue
@@ -102,18 +107,18 @@ def process_task(task, files_dir, max_retries=3, agent_config="CODING_AGENT"):
 
             # Run the test command or script
             if test_command:
-                print(
+                logging.info(
                     f"Executing script at {test_command}, passing agent stdout as stdin"
                 )
                 # Pass the captured agent_stdout as input to the test command
                 out, err, code = run_command(test_command, input_data=agent_stdout)
-                print(f"Test command returncode: {code} | stdout: {out}")
+                logging.info(f"Test command returncode: {code} | stdout: {out}")
                 if err.strip():
-                    print(f"Test command stderr: {err}")
+                    logging.error(f"Test command stderr: {err}")
                 passed = int(code) == 0
                 output = passed and "PASS" or "FAIL"
             elif test_script:
-                print(f"Executing in-line test script")
+                logging.info(f"Executing in-line test script")
                 # Note: Passing stdin to exec is not straightforward.
                 # agent_stdout is available in the 'test_local' dict if needed by the script.
                 test_local["agent_stdout"] = agent_stdout
@@ -124,16 +129,16 @@ def process_task(task, files_dir, max_retries=3, agent_config="CODING_AGENT"):
                     output = test_local.get("output", "FAIL").strip().upper()
                     passed = output == "PASS"
                 except KeyboardInterrupt:
-                    print("Interrupted! Terminating.")
+                    logging.warning("Interrupted! Terminating.")
                     sys.exit(0)
                 finally:
                     signal.alarm(0)
 
-            print(f"Test {task_id} | Passed: {passed}")
+            logging.info(f"Test {task_id} | Passed: {passed}")
             break
 
         except Exception as e:
-            print(f"Test failed: {str(e)}", file=sys.stderr)
+            logging.error(f"Test failed: {str(e)}")
             error_message = str(e)
             # Retry only it's a server error
             if "The server has returned an error" in str(e):
