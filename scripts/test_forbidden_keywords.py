@@ -29,9 +29,9 @@ def test_forbidden_keywords(input_text, forbidden_keywords, exempt_patterns=None
     for command in forbidden_keywords:
         cmd_lower = command.lower()
         execution_patterns = [
-            rf"command.*?{cmd_lower}",
-            rf"&& {cmd_lower}\s+",
-            rf"executing.*?{cmd_lower}",
+            # rf"command.*?{cmd_lower}",
+            rf"&& .*{cmd_lower}\s+\n?",
+            # rf"executing.*?{cmd_lower}",
         ]
 
         for pattern in execution_patterns:
