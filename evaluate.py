@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import signal
 import sys
@@ -7,6 +8,11 @@ from multiprocessing import Pool, cpu_count
 from benchmark_report import BenchmarkReport
 from task_processor import process_task
 from utils.file import remove_previous_folders, extract_tests_from_jsonl
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 def process_task_wrapper(args):
     """
@@ -17,6 +23,7 @@ def process_task_wrapper(args):
     """
     task, dataset_dir, retry_limit, agent_config = args
     return process_task(task, dataset_dir, retry_limit, agent_config)
+
 
 def handle_result(result_entry, benchmark, task_id=None, fail_fast=False):
     """
@@ -29,14 +36,26 @@ def handle_result(result_entry, benchmark, task_id=None, fail_fast=False):
         fail_fast (bool): Whether to exit immediately when a test fails
     """
     benchmark.add_result(result_entry)
-    if not result_entry['passed'] and fail_fast:
+    if not result_entry["passed"] and fail_fast:
         task_info = f" {task_id}" if task_id else ""
-        print(f"\nTest{task_info} failed after {benchmark.retry_limit} retries. Exiting due to --fail-fast.")
-        print(f"Error message: {result_entry.get('error_message')}")
+        logging.error(
+            f"\nTest{task_info} failed after {benchmark.retry_limit} retries. Exiting due to --fail-fast."
+        )
+        logging.error(f"Error message: {result_entry.get('error_message')}")
         benchmark.save_to_file()
         sys.exit(1)
 
-def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fast, parallel, description):
+
+def main(
+    jsonl_path,
+    benchmark_config,
+    agent_config,
+    testnum,
+    testfrom,
+    fail_fast,
+    parallel,
+    description,
+):
     """
     Main function to process tasks from a JSONL file.
 
@@ -50,22 +69,24 @@ def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fas
         parallel (int): Number of parallel workers (0 means use CPU count, 1 means sequential).
         description (str): Optional description of the benchmark run.
     """
-    dataset_dir = 'datasets'
+    dataset_dir = "datasets"
     remove_previous_folders(dataset_dir)
     os.makedirs(dataset_dir, exist_ok=True)
 
     # Load benchmark configuration
-    benchmark = BenchmarkReport("AI Model Pair Benchmark", config_file=benchmark_config, description=description)
+    benchmark = BenchmarkReport(
+        "AI Model Pair Benchmark", config_file=benchmark_config, description=description
+    )
     tests = extract_tests_from_jsonl(jsonl_path)
 
     # Filter tests based on testnum and testfrom
     filtered_tests = []
     is_test_from = False
     for task in tests:
-        if testnum and task['id'] != testnum:
+        if testnum and task["id"] != testnum:
             continue
         if testfrom and not is_test_from:
-            if task['id'] == testfrom:
+            if task["id"] == testfrom:
                 is_test_from = True
             else:
                 continue
@@ -74,14 +95,16 @@ def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fas
 
     # Always use parallel processing
     # Prepare arguments for parallel processing
-    process_args = [(task, dataset_dir, benchmark.retry_limit, agent_config)
-                    for task in filtered_tests]
+    process_args = [
+        (task, dataset_dir, benchmark.retry_limit, agent_config)
+        for task in filtered_tests
+    ]
 
     # Use specified number of workers or CPU count if parallel is 0
     num_processes = parallel or cpu_count()
     # Cap number of processes at number of tests
     num_processes = min(num_processes, len(filtered_tests))
-    print(f"Running {num_processes} processes in parallel")
+    logging.info(f"Running {num_processes} processes in parallel")
 
     with Pool(num_processes) as pool:
         # Use imap_unordered for non-blocking iteration over results
@@ -93,39 +116,78 @@ def main(jsonl_path, benchmark_config, agent_config, testnum, testfrom, fail_fas
 
 
 def signal_handler(sig, frame):
-    print('You pressed CTRL+C! Exiting...')
+    logging.warning("You pressed CTRL+C! Exiting...")
     # Perform any necessary cleanup here
     sys.exit(0)
+
 
 # Register the signal handler for SIGINT (CTRL+C)
 signal.signal(signal.SIGINT, signal_handler)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Evaluate tasks from a JSONL file.')
-    parser.add_argument('problem_file', type=str, help='Path to the JSONL file containing the tasks.', nargs='?',
-                        default='./config/honest_benchmark.jsonl')
-    parser.add_argument('--benchmark-config', type=str, help='Path to the benchmark configuration file.',
-                        default='./config/benchmark_config.json', dest='benchmark_config')
-    parser.add_argument('--test', type=str, help='Test ID to run.', default=None, dest='testnum')
-    parser.add_argument('--from', type=str, help='Test ID to run from.', default=None, dest='testfrom')
-    parser.add_argument('--agent-config', type=str, help='Agent to run.', default='CODING_AGENT', dest='agent_config')
-    parser.add_argument('--fail-fast', action='store_true',
-                       help='Exit immediately if a test fails after all retries',
-                       dest='fail_fast')
-    parser.add_argument('--parallel', type=int, default=0,
-                       help='Number of parallel workers. 0=use CPU count (default), N=N workers)',
-                       dest='parallel')
-    parser.add_argument('--description', type=str, default=None,
-                       help='Optional description of the benchmark run',
-                       dest='description')
+    parser = argparse.ArgumentParser(description="Evaluate tasks from a JSONL file.")
+    parser.add_argument(
+        "problem_file",
+        type=str,
+        help="Path to the JSONL file containing the tasks.",
+        nargs="?",
+        default="./config/honest_benchmark.jsonl",
+    )
+    parser.add_argument(
+        "--benchmark-config",
+        type=str,
+        help="Path to the benchmark configuration file.",
+        default="./config/benchmark_config.json",
+        dest="benchmark_config",
+    )
+    parser.add_argument(
+        "--test", type=str, help="Test ID to run.", default=None, dest="testnum"
+    )
+    parser.add_argument(
+        "--from", type=str, help="Test ID to run from.", default=None, dest="testfrom"
+    )
+    parser.add_argument(
+        "--agent-config",
+        type=str,
+        help="Agent to run.",
+        default="CODING_AGENT",
+        dest="agent_config",
+    )
+    parser.add_argument(
+        "--fail-fast",
+        action="store_true",
+        help="Exit immediately if a test fails after all retries",
+        dest="fail_fast",
+    )
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=0,
+        help="Number of parallel workers. 0=use CPU count (default), N=N workers)",
+        dest="parallel",
+    )
+    parser.add_argument(
+        "--description",
+        type=str,
+        default=None,
+        help="Optional description of the benchmark run",
+        dest="description",
+    )
     args = parser.parse_args()
 
     # Print all arguments
-    print("\nRunning with arguments:")
+    logging.info("\nRunning with arguments:")
     for arg, value in vars(args).items():
-        print(f"  {arg}: {value}")
-    print()
+        logging.info(f"  {arg}: {value}")
 
-    main(args.problem_file, args.benchmark_config, args.agent_config,
-         args.testnum, args.testfrom, args.fail_fast, args.parallel, args.description)
+    main(
+        args.problem_file,
+        args.benchmark_config,
+        args.agent_config,
+        args.testnum,
+        args.testfrom,
+        args.fail_fast,
+        args.parallel,
+        args.description,
+    )

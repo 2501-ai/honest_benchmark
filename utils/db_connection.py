@@ -7,12 +7,12 @@ from dotenv import load_dotenv
 
 
 class DBConnector:
-    def __init__(self, env_path='.env'):
+    def __init__(self, env_path=".env"):
         # Load environment variables from the .env file
         load_dotenv(env_path)
 
         # Retrieve database connection URL from environment variables
-        self.database_url = os.getenv('DIRECT_URL')
+        self.database_url = os.getenv("DIRECT_URL")
         if not self.database_url:
             raise ValueError("Database 'DIRECT_URL' not found in environment variables")
 
@@ -56,25 +56,25 @@ class DBConnector:
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
             # Serialize JSON fields
-            test_json = json.dumps(result_data['test'])
-            labels_json = json.dumps(result_data['labels'])
-            model_pair_json = json.dumps(result_data['model_pair'])
+            test_json = json.dumps(result_data["test"])
+            labels_json = json.dumps(result_data["labels"])
+            model_pair_json = json.dumps(result_data["model_pair"])
 
             arguments = (
-                result_data['task_id'],
-                result_data['task_name'],
-                result_data['benchmark_id'],
-                result_data['input'],
+                result_data["task_id"],
+                result_data["task_name"],
+                result_data["benchmark_id"],
+                result_data["input"],
                 labels_json,
-                result_data['passed'],
-                result_data['duration_ms'],
-                result_data['pre_process_model'],
+                result_data["passed"],
+                result_data["duration_ms"],
+                result_data["pre_process_model"],
                 model_pair_json,
-                result_data['accuracy'],
-                result_data['run_at'],
-                result_data['benchmark_file'],
-                result_data['error_message'],
-                test_json
+                result_data["accuracy"],
+                result_data["run_at"],
+                result_data["benchmark_file"],
+                result_data["error_message"],
+                test_json,
             )
 
             cursor.execute(query, arguments)
